@@ -1,0 +1,53 @@
+<doctype html>
+<title>New Vehicle Sale</title>
+<h2>New Vehicle Sale</h2>
+
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+    <dl>
+        {{ render_field(form.artist) }}
+        {{ render_field(form.title) }}
+        {{ render_field(form.release_date) }}
+        {{ render_field(form.publisher) }}
+        {{ render_field(form.media_type) }}
+    </dl>
+    <p><input type=submit value=Submit>
+</form>
+
+<!--
+<div class="twelve columns">
+    <h1>Create Vehicle Sale Record</h1>
+</div>
+
+<div class="row">
+    <form class="six columns templar_form" action="/create_sale" method="post" enctype="multipart/form-data" >
+
+        <label class="clear_both three columns" for="vin">VIN:</label>
+        <input class="three columns" name="vin" type="text" maxlength="17" min="17" placeholder="17 digits"/>
+
+        <label class="clear_both three columns" for="make">Make:</label>
+        <input class="three columns" name="make" type="text"/>
+
+        <label class="clear_both three columns" for="model">Model:</label>
+        <input class="three columns" name="model" type="text"/>
+
+        <label class="clear_both three columns" for="year">Year:</label>
+        <input class="three columns" name="year" type="number"/>
+
+        <label class="clear_both three columns" for="price">Price:</label>
+        <input class="three columns" name="price" type="number"/>
+
+        <label class="clear_both three columns" for="buyer">Buyer:</label>
+        <input class="three columns" name="buyer" type="text">
+
+        <label class="clear_both three columns" for="seller">Seller:</label>
+        <input class="three columns" name="seller" type="text">
+
+        <label class="clear_both three columns" for="date_of_sale">Date of sale:</label>
+        <input class="three columns" name="date_of_sale" type="text">
+
+
+        <button class="two columns" id="email_submit" value="Upload">Submit</button>
+    </form>
+</div>
+-->
