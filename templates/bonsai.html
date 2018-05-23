@@ -13,11 +13,6 @@
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/m-favicon.png') }}" />
 	<link href='http://fonts.googleapis.com/css?family=Playfair+Display+SC:700' rel='stylesheet' type='text/css'>
 	<link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
-	<style>
-		.intro h1:before {
-			content: 'MATT TAKAO';
-		}
-	</style>
 </head>
 <body>
 
@@ -36,14 +31,11 @@
               <li><a class="login-logout-button" href="{{ url_for('logout') }}">Logout {{user}}</a></li>
               {% endif %}
               <li>|</li>
-				      <li class="active"><a href="#about">About</a></li>
-              <li><a href="#projects">Projects</a></li>
-				      <li><a href="#experience">Experience</a></li>
-				      <li><a href="#skills">Skills</a></li>
-              <li>|</li>
-              <li><a href="bonsai">The Bonsai Blog</a></li>
-              <li>|</li>
-              <li><a href="stocks">Stocks</a></li>
+                <li><a href="/">Home</a></li>
+                <li>|</li>
+                <li><a href="bonsai">The Bonsai Blog</a></li>
+                <li>|</li>
+                <li><a href="stocks">Stocks</a></li>
 				    </ul>
 				</nav>
 			</header>
@@ -51,109 +43,31 @@
 	</div>
 
 
-	<!-- Introduction -->
-	<div class="intro section" id="about">
-		<div class="container">
-			<p>Hi, I’m Matt.</p>
-			<div class="units-row units-split wrap">
-				<div class="unit-20">
-					<img src="{{ url_for('static', filename='img/avatar.jpg') }}" alt="Avatar">
-				</div>
-				<div class="unit-80">
-					<h1>I love<br><span id="typed"></span></h1>
-				</div>
-				<p>
-					I'm a Japanese / USA dual national, and attended Northeastern University in Boston.<br>
-          I currently work in LA at Boeing on C-17 Avionics.
-				</p>
-        <br>
-        <p> Download my resume! (.pdf) </p>
-        <a href="/return-files/" target="blank"><button class='btn btn-default'>Download!</button></a>
-			</div>
-		</div>
-	</div>
-
-  <!-- Projects -->
-  <div class="work section second" id="projects">
-    <div class="container">
-      <h1>Projects</h1>
-      <ul class="work-list">
-        <li>2018-current</li>
-        <li><a href="https://github.com/emptyopen/takaomattcom">This Website</a></li>
-        <li>Using Flask and AWS.</li>
-      </ul>
-      <ul class="work-list">
-        <li>2016-current</li>
-        <li><a href="#">Capit Vita</a></li>
-        <li>A python program to automatically screen and trade stocks, options, and crypto-currency.</li>
-      </ul>
-      <ul class="work-list">
-        <li>2017-current</li>
-        <li><a href="https://github.com/emptyopen/twitch-escapes">Twitch Escapes</a></li>
-        <li>A python game streamed on Twitch where viewers try to escape.</li>
-      </ul>
-      <ul class="work-list">
-        <li>2018</li>
-        <li><a href="https://github.com/emptyopen/flood-solver">Flood Solver</a></li>
-        <li>My attempt at solving the classic flood game (colors).</li>
-      </ul>
-    </div>
+  <div class="container">
+	   <h1>The Bonsai Tree</h1>
   </div>
 
-	<!-- Work Experience -->
-	<div class="work section second" id="experience">
-		<div class="container">
-			<h1>Work<br>Experience</h1>
-			<ul class="work-list">
-				<li>2017-current</li>
-				<li><a href="http://www.boeing.com/">Boeing</a></li>
-				<li>Systems Engineer</li>
-			</ul>
-			<ul class="work-list">
-				<li>2014-2017</li>
-				<li><a href="http://www.pw.utc.com/">Pratt & Whitney</a></li>
-				<li>Flight Test - Engine Controls Engineer</li>
-			</ul>
-			<ul class="work-list">
-				<li>2012-2012</li>
-				<li><a href="http://avigilon.com/">VideoIQ</a></li>
-				<li>Hardware Engineer Co-op</li>
-			</ul>
-      <ul class="work-list">
-				<li>2011-2011</li>
-				<li><a href="http://www.irobot.com/">iRobot</a></li>
-				<li>Hardware Engineer Co-op</li>
-			</ul>
-      <ul class="work-list">
-				<li>2010-2010</li>
-				<li><a href="https://www.synaptics.com/">Conexant Systems</a></li>
-				<li>Electrical Engineer</li>
-			</ul>
-		</div>
-	</div>
 
-	<!-- Technical Skills -->
-	<div class="skills section second" id="skills">
-		<div class="container">
-			<h1>Skills</h1>
-			<ul class="skill-list list-flat">
-				<li>Python</li>
-				<li>pandas / numpy / flask / pygame</li>
-			</ul>
-      <ul class="skill-list list-flat">
-				<li>AWS</li>
-				<li>EC2 / Route 53</li>
-			</ul>
-			<ul class="skill-list list-flat">
-				<li>OS</li>
-				<li>Windows / Mac / Linux</li>
-			</ul>
-			<ul class="skill-list list-flat">
-				<li>Other</li>
-				<li>Japanese (fluent)</li>
-			</ul>
-		</div>
-	</div>
+  <div class="section second" id="projects">
+    <div class="container blog">
+        <h3>2018-03-15</h3>
+        <img src="static/img/bonsai/20180315_194118.jpg" alt="seeds_holes">
+        <img src="static/img/bonsai/20180315_194213.jpg" alt="seeds_in_holes">
+        <p>Seeds in the holes.</p>
+        <img src="static/img/bonsai/20180315_194303.jpg" alt="covered_holes">
+        <p>Covered the holes!</p>
+        <br></br>
+        <h3>2018-03-14</h3>
+        <img src="static/img/bonsai/20180315_172259.jpg" alt="glass1">
+        <img src="static/img/bonsai/20180315_172305.jpg" alt="glass2">
+        <p>I dunked the seeds in water, and I'll plant them in a day or two.</p>
+        <br></br>
+        <h3>2018-01-04</h3>
+        <img src="static/img/bonsai/20180315_193649.jpg" alt="english_instructions">
+        <img src="static/img/bonsai/20180315_193655.jpg" alt="japanese_instructions">
+        <p>I put the seeds in the fridge. I'll plant them sometime after my birthday in March.</p>
+    </div>
+  </div>
 
 
 	<!-- Quote -->

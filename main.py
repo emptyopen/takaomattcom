@@ -9,190 +9,209 @@
 # ready to submit!
 #
 
-from datetime import datetime
+import datetime as dt
+import os
 
-from flask import flash, request, render_template, redirect
+from flask import Flask, flash, request, render_template, redirect, send_file, url_for, abort
+from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 from sqlalchemy import or_
+from flask_sqlalchemy import SQLAlchemy
 
-from app import app, db
-from models import VehicleSale
-from tables import Results
-from forms import SearchVehicleSalesForm, CreateVehicleSaleForm
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.urls import url_parse
+
+
+
+app = Flask(__name__)
+app.config.from_pyfile('config.py')
+db = SQLAlchemy(app)
+login = LoginManager(app)
+login.login_view = 'login'
+
+home_path = os.path.abspath(os.getcwd())
+if 'ec2-user' in home_path:
+    home_path = '/home/ec2-user/takaomattcom'
+par_path = os.path.dirname(home_path)
+
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
+
+    def __repr__(self):
+        return '<User {}>'.format(self.username)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 db.create_all()
 
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember_me = BooleanField('Remember Me')
+    submit = SubmitField('Sign In')
+
+class RegistrationForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    password2 = PasswordField(
+        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different username.')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different email address.')
 
 @app.route('/', methods = ['GET', 'POST'])
 def index():
-    """Homepage: includes search function and a link to create new entries
-    """
-    search = SearchVehicleSalesForm(request.form)
-    if request.method == 'POST':
-        return search_results(search)
-    return render_template('index.html', form=search)
+    return render_template('index.html')
 
+@app.route('/bonsai', methods = ['GET', 'POST'])
+def bonsai():
+    return render_template('bonsai.html')
 
-@app.route('/results/', )
-def search_results(search):
-    """Search: computes and then redirects to either
-    index.html if there are no results (with flashed message), or
-    results.html if results are found
-    """
-    results = []
-    search_string = search.data['search']
+@app.route('/stocks', methods = ['GET', 'POST'])
+@login_required
+def stocks():
+    stocks_data_dir = par_path + '/capit-vita/data/'
+    images = os.listdir(stocks_data_dir)
+    today = dt.date.today().strftime('%b %d, %Y')
+    return render_template('stocks.html', images=images, today=today)
 
-    if search_string:
-        if search.data['select'] == 'VIN':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.vin.contains(search_string)).all()
-        elif search.data['select'] == 'Make':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.make.contains(search_string)).all()
-        elif search.data['select'] == 'Model':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.model.contains(search_string)).all()
-        elif search.data['select'] == 'Year':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.year.contains(search_string)).all()
-        elif search.data['select'] == 'Price':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.price.contains(search_string)).all()
-        elif search.data['select'] == 'Buyer':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.buyer.contains(search_string)).all()
-        elif search.data['select'] == 'Seller':
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.seller.contains(search_string)).all()
-        elif search.data['select'] == 'Make AND Model (separate with /)':
-            search_string = search_string.split('/')
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.make.contains(search_string[0])).filter(
-                VehicleSale.model.contains(search_string[1])).all()
-        elif search.data['select'] == 'Make AND Model AND Year (/)':
-            search_string = search_string.split('/')
-            results = db.session.query(VehicleSale).filter(
-                VehicleSale.make.contains(search_string[0])).filter(
-                VehicleSale.model.contains(search_string[1])).filter(
-                VehicleSale.year.contains(search_string[2])).all()
-        elif search.data['select'] == 'Buyer OR Seller':
-            results = db.session.query(VehicleSale).filter(or_(
-                VehicleSale.buyer.contains(search_string),
-                VehicleSale.seller.contains(search_string))).all()
-        else:
-            results = db.session.query(VehicleSale).all()
+@app.route('/return-files/')
+def return_files_tut():
+	try:
+		return send_file('static/files/takao-resume.pdf', attachment_filename='takao-resume.pdf')
+	except Exception as e:
+		return str(e)
 
-    else: # no search criteria, return all
-        results = db.session.query(VehicleSale).all()
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
 
-    if not results:
-        flash('No results found!')
-        return redirect('/')
-    else:
-        table = Results(results)
-        table.border = True
-        return render_template('results.html', table=table)
+@app.route('/login', methods = ['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            next_page = url_for('index')
+        return redirect(next_page)
+    return render_template('login.html', title='Sign In', form=form)
 
-
-@app.route("/create_sale_form/", methods = ['GET', 'POST'])
-def create_sale_form():
-    """Create sale(s): Redirects to homepage after successful creation
-    """
-    form = CreateVehicleSaleForm(request.form)
-
-    if request.method == 'POST' and form.validate():
-        save_db(form, sale_number = 'new')
-        flash('Vehicle sale successfully logged.')
-        return redirect('/')
-
-    return render_template('new_vehicle_sale.html', form=form)
-
-
-def save_db(form, sale_number = 'new'):
-    """Save db: Adds or updates a row to the database
-    """
-    if sale_number == 'new':
-        sale = VehicleSale()
-    else: # for updating an existing row
-        sale = db.session.query(VehicleSale).filter_by(
-                sale_number = sale_number).first()
-    sale.vin = form.vin.data
-    sale.make = form.make.data
-    sale.model = form.model.data
-    sale.year = form.year.data
-    sale.price = form.price.data
-    sale.buyer = form.buyer.data
-    sale.seller = form.seller.data
-    sale.date_of_sale = form.date_of_sale.data
-
-    db.session.add(sale)
-    db.session.commit()
-
-
-@app.route('/uploader', methods = ['GET', 'POST'])
-def upload_file():
-    """Upload file: for bulk upload
-    Could make this more robust to handle different types of files, formats, etc
-    """
-    if request.method == 'POST':
-        f = request.files['file']
-        file_contents = f.read()
-        for row in file_contents.split('\n'):
-            data = row.split(',')
-            if data != ['']: # disregard empty rows / space
-                sale = VehicleSale()
-                sale.vin = data[0]
-                sale.make = data[1]
-                sale.model = data[2]
-                sale.year = data[3]
-                sale.price = data[4]
-                sale.buyer = data[5]
-                sale.seller = data[6]
-                sale.date_of_sale = datetime.strptime(data[7][:-1], '%Y-%m-%d')
-                db.session.add(sale)
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
         db.session.commit()
-        flash('Vehicle sales successfully logged.')
-        return redirect('/')
-    else:
-        flash('Problem loading file.')
-        return redirect('/')
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+def myround(x, base=5):
+    return int(base * round(float(x)/base))
+
+@app.route('/fitness')
+def fitness():
+
+    weight = 183
+
+    calories = myround(weight * 12)
+    protein = myround(calories * .27 / 4)
+    fat = myround(calories * .33 / 9)
+    carbs = myround(calories * .4 / 4)
+
+    calories_refeed = myround(weight * 15)
+    protein_refeed = myround(calories_refeed * .25 / 4)
+    fat_refeed = myround(calories_refeed * .3 / 9)
+    carbs_refeed = myround(calories_refeed * .45 / 4)
+
+    print('For {} lbs, regular day:'.format(weight))
+    print('  Calories: {} cal, Protein: {}g, Fat: {}g, Carbs: {}g\n'.format(calories, protein, fat, carbs))
+
+    print('For {} lbs, heavy day:'.format(weight))
+    print('  Calories: {} cal, Protein: {}g, Fat: {}g, Carbs: {}g\n'.format(calories_refeed, protein_refeed, fat_refeed, carbs_refeed))
 
 
-@app.route('/edit/<int:sale_number>/', methods = ['GET', 'POST'])
-def edit_sale(sale_number):
-    """Edit: edits an entry by sale_number
-    If a sale_number exists, provide an editing web form, then update entry
-    """
-    sale = db.session.query(VehicleSale).filter_by(
-            sale_number = sale_number).first()
-    if sale:
-        form = CreateVehicleSaleForm(formdata = request.form, obj=sale)
-        if request.method == 'POST' and form.validate():
-            save_db(form, sale_number)
-            flash('Sale updated successfully.')
-            return redirect('/')
-        return render_template('edit_sale.html', form=form)
-                # user will arrive at edit_sale.html for GET (first time)
-    else:
-        flash('No sale #{} in database.'.format(sale_number))
-        return redirect('/')
+    # lifting goals: decent, good, great, warrior
+
+    ranks = ['Decent', 'Good', 'Great', 'Warrior']
+    lifts = {'Incline Bench':['{} for 5 reps'.format(myround(weight * coeff, 5)) for coeff in [1, 1.1, 1.2, 1.3]],
+             'Standing Press':['{} for 5 reps'.format(myround(weight * coeff, 5)) for coeff in [0.6, 0.7, 0.8, 0.9]],
+             'Weighted Chin-ups':['{} for 5 reps'.format(myround(weight * coeff, 5)) for coeff in [0.2, 0.3, 0.4, 0.5]],
+             'Front Squats':['{} for 5 reps'.format(myround(weight * coeff, 5)) for coeff in [1.1, 1.2, 1.3, 1.4]],
+             'Bulgarin Split Squats':['{} for 6 reps'.format(myround(weight * coeff, 5)) for coeff in [0.6, 0.7, 0.8, 0.9]],
+             'Romanian Deadlifts':['{} for 8 reps'.format(myround(weight * coeff, 5)) for coeff in [1.2, 1.35, 1.5, 1.65]]
+            }
+
+    print('Lifting goals:')
+    for lift in lifts:
+        print('\n{}:'.format(lift))
+        for i in range(len(ranks)):
+            print('  {}: {} lbs'.format(ranks[i], lifts[lift][i]))
+
+    # phase 1: 8 weeks
+    incline_barbell_current = 100
+    incline_barbell_sets = [myround(incline_barbell_current * x) for x in [1, 0.9, 0.8]]
+    flat_dumbbell_bench_current = 100
+    flat_dumbbell_bench_sets = [myround(flat_dumbbell_bench_current * x) for x in [1, 0.9]]
+    incline_dumbbell_curls_current = 20
+    incline_dumbbell_curls_sets = [myround(incline_dumbbell_curls_current - x) for x in [0, 5, 10]]
+    rope_hammer_curls_current = 20
+    rope_hammer_curls_sets = [myround(rope_hammer_curls_current * x ) for x in [1, 0.9]]
+    bent_over_flyes_current = 20
 
 
-@app.route('/delete/<int:sale_number>/', methods = ['GET', 'POST'])
-def delete_sale(sale_number):
-    """Delete: deletes an entry by sale_number
-    """
-    sale = db.session.query(VehicleSale).filter_by(
-                sale_number = sale_number).first()
-    if sale:
-        db.session.delete(sale)
-        db.session.commit()
-        flash('Sale deleted successfully.')
-        return redirect('/')
-    else:
-        flash('No sale #{} in database.'.format(sale_number))
-        return redirect('/')
-
-
+    print('\n\n--- Workout A --- \n')
+    print('Incline barbell warm-up: 6 light reps, 4 medium reps, 2 heavy reps.')
+    print('Incline barbell sets: 5-6 reps of {} lbs, 6-7 reps of {} lbs, 7-8 reps of {} lbs. 3 minutes between sets.'.format(incline_barbell_sets[0], incline_barbell_sets[1], incline_barbell_sets[2]))
+    print('  Complete [], Mastered []') # mastered = +5 lbs
+    print('Flat dumbbell bench: 8-10 reps of {} lbs, 10-12 reps of {} lbs. 3 minutes between sets.'.format(flat_dumbbell_bench_sets[0], flat_dumbbell_bench_sets[1]))
+    print('  Complete [], Mastered []') # mastered = +5 lbs
+    print('Incline dumbbell curls warm-up: 8 light reps.')
+    print('Incline dumbbell curls: 6-8 reps of {} lbs, 6-8 reps of {} lbs, 6-8 reps of {} lbs. 3 minutes between sets.'.format(incline_dumbbell_curls_sets[0], incline_dumbbell_curls_sets[1], incline_dumbbell_curls_sets[2]))
+    print('  Complete [], Mastered []') # mastered = +5 lbs
+    print('Rope hammer curls: 8-10 reps of {} lbs, 10-12 reps of {} lbs. 3 minutes between sets.'.format(rope_hammer_curls_sets[0], rope_hammer_curls_sets[1]))
+    print('  Complete [], Mastered []') # mastered = +5 lbs
+    print('Bent over flyes: (@ {} lbs) 12-15 reps, rest 10s, 4-6 reps, rest 10s, 4-6 reps, rest 10s, 4-6 reps.'.format(bent_over_flyes_current))
+    print('  Complete [], Mastered []') # mastered = +5 lbs
 
 if __name__ == '__main__':
-    app.run()
+    if os.getcwd() == r'C:\Users\Takkeezi\Documents\python\takaomattcom\website':
+        app.run()
+    else:
+        app.run(host='0.0.0.0', port = 80)

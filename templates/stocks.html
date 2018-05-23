@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matt Takao</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Matt Takao webpage">
+    <meta name="author" content="Matt Takao">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kube.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/m-favicon.png') }}" />
+	<link href='http://fonts.googleapis.com/css?family=Playfair+Display+SC:700' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+</head>
+<body>
+
+	<!-- Navigation -->
+	<div class="main-nav">
+		<div class="container">
+			<header class="group top-nav">
+				<div class="navigation-toggle" data-tools="navigation-toggle" data-target="#navbar-1">
+				    <span class="logo">MATT TAKAO</span>
+				</div>
+			    <nav id="navbar-1" class="navbar item-nav">
+				    <ul>
+              {% if current_user.is_anonymous %}
+              <li><a class="login-logout-button" href="{{ url_for('login') }}">Login</a></li>
+              {% else %}
+              <li><a class="login-logout-button" href="{{ url_for('logout') }}">Logout {{user}}</a></li>
+              {% endif %}
+              <li>|</li>
+                <li><a href="/">Home</a></li>
+                <li>|</li>
+                <li><a href="bonsai">The Bonsai Blog</a></li>
+                <li>|</li>
+                <li><a href="stocks">Stocks</a></li>
+				    </ul>
+				</nav>
+			</header>
+		</div>
+	</div>
+
+  <br>
+  <br>
+
+  <div class="container">
+	   <h1>Stock choices as of {{today}}</h1>
+  </div>
+
+
+  <div class="section second" id="stocks">
+    <div class="stocks-container">
+      <section class="row">
+      {% for image in images %}
+        <section class="col-md-4 col-sm-6" style="background-color: white;">
+          <br>
+          <br>
+          <a href="{{ url_for('static', filename='img/stocks/' + image) }}"><img src="{{ url_for('static', filename='img/stocks/' + image) }}" alt="">
+        </section>
+      {% endfor %}
+      </section>
+    </div>
+  </div>
+
+
+
+	<!-- Javascript -->
+	<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/typed.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/kube.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+    <script>
+		function newTyped(){}$(function(){$("#typed").typed({
+		// Change to edit type effect
+		strings: ["Python", "IPA beers", "Blockchain", "Dogs", "Ramen", "Autonomous Cars", "Scuba diving", "Drones", "Space", "Virtual Reality"],
+
+		typeSpeed:110,backDelay:700,contentType:"html",loop:!0,resetCallback:function(){newTyped()}}),$(".reset").click(function(){$("#typed").typed("reset")})});
+    </script>
+</body>
+</html>
