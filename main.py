@@ -24,7 +24,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
 
 
-
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 db = SQLAlchemy(app)
@@ -42,6 +41,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
+    portfolio_ownership = db.Column(db.Float)
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -89,10 +89,25 @@ def bonsai():
 @app.route('/stocks', methods = ['GET', 'POST'])
 @login_required
 def stocks():
+
+    d = {'takaoandrew@gmail.com': 25.45,
+         'takaomatt@gmail.com': 61.87,
+         'mazyyap@gmail.com': 4.31,
+         'takaotim@gmail.com': 8.36}
+
+    print(current_user.email)
+
+    if current_user.email in d:
+        print('here', current_user.email)
+        print(d[current_user.email])
+        current_user.portfolio_ownership = d[current_user.email]
+        db.session.commit()
+
     stocks_data_dir = par_path + '/capit-vita/data/'
     images = os.listdir(stocks_data_dir)
     today = dt.date.today().strftime('%b %d, %Y')
-    return render_template('stocks.html', images=images, today=today)
+    portfolio_ownership = current_user.portfolio_ownership
+    return render_template('stocks.html', images=images, today=today, portfolio_ownership=portfolio_ownership)
 
 @app.route('/return-files/')
 def return_files_tut():
@@ -128,7 +143,7 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        user = User(username=form.username.data, email=form.email.data, portfolio_ownership=0)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -211,7 +226,8 @@ def fitness():
     print('  Complete [], Mastered []') # mastered = +5 lbs
 
 if __name__ == '__main__':
-    if os.getcwd() == r'C:\Users\Takkeezi\Documents\python\takaomattcom\website':
+
+    if os.getcwd() == r'C:\Users\Takkeezi\Documents\python\takaomattcom\website' or os.getcwd() == '/Users/takaomatt/Documents/python-projects/takaomattcom':
         app.run()
     else:
         app.run(host='0.0.0.0', port = 80)

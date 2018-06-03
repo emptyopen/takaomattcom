@@ -49,6 +49,10 @@
 	   <h1>Stock choices as of {{today}}</h1>
   </div>
 
+  <div class="container">
+     <h2>Your portfolio ownership is: {{portfolio_ownership}}%</h2>
+  </div>
+
 
   <div class="section second" id="stocks">
     <div class="stocks-container">
@@ -71,12 +75,5 @@
 	<script src="{{ url_for('static', filename='js/typed.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/kube.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/site.js') }}"></script>
-    <script>
-		function newTyped(){}$(function(){$("#typed").typed({
-		// Change to edit type effect
-		strings: ["Python", "IPA beers", "Blockchain", "Dogs", "Ramen", "Autonomous Cars", "Scuba diving", "Drones", "Space", "Virtual Reality"],
-
-		typeSpeed:110,backDelay:700,contentType:"html",loop:!0,resetCallback:function(){newTyped()}}),$(".reset").click(function(){$("#typed").typed("reset")})});
-    </script>
 </body>
 </html>
