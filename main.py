@@ -70,20 +70,18 @@ equities = [x[1] for x in historical_values]
 dates = [x[0] for x in historical_values]
 dates = [dt.datetime.strptime(x, '%Y-%m-%d') for x in dates]
 dates = matplotlib.dates.date2num(dates)
-curr_value = [equities[-1] for _ in historical_values]
-min_value = [max(equities) for _ in historical_values]
-max_value = [min(equities) for _ in historical_values]
+max_value = [max(equities) for _ in historical_values]
+min_value = [min(equities) for _ in historical_values]
 
 ax.plot_date(dates, equities, '-', color='#63F6B7', lw=3)
-ax.plot_date(dates, curr_value, '-', color='#404040')
-ax.plot_date(dates, min_value, '-', color='#808080')
-ax.plot_date(dates, max_value, '-', color='#808080')
+ax.plot_date(dates, min_value, '-', color='#808080', alpha = 0.7)
+ax.plot_date(dates, max_value, '-', color='#808080', alpha = 0.7)
 upper_limit = float(max(equities)) * 1.2
 up_offset = upper_limit * .01
 down_offset = upper_limit * .05
-ax.text(dates[3], float(equities[-1]) - down_offset, 'Current value: ${}'.format(equities[-1]))
-ax.text(dates[3], float(max(equities)) + up_offset, 'Maximum value: ${}'.format(max(equities)))
-ax.text(dates[3], float(min(equities)) - down_offset, 'Minimum value: ${}'.format(min(equities)))
+ax.text(dates[3], float(equities[-1]) - down_offset, 'Total change: ${}'.format(float(equities[-1]) - float(equities[0])))
+ax.text(dates[3], float(max(equities)) + up_offset, '${}'.format(max(equities)))
+ax.text(dates[3], float(min(equities)) - down_offset, '${}'.format(min(equities)))
 
 mondays = mdates.WeekdayLocator(mdates.MONDAY)
 months = mdates.MonthLocator()
