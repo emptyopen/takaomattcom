@@ -58,10 +58,14 @@
             request.form.password }}">
           <input class="btn btn-default" type="submit" value="Login">
         </form>
-        {% if error %}
-          <p class="error"><strong>Error:</strong> {{ error }}
-        {% endif %}
         <p>New user?  <a href="{{ url_for('register') }}">Click to register!</a></p>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-info" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
       </div>
     </body>
   </html>
@@ -72,12 +76,5 @@
 	<script src="{{ url_for('static', filename='js/typed.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/kube.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/site.js') }}"></script>
-    <script>
-		function newTyped(){}$(function(){$("#typed").typed({
-		// Change to edit type effect
-		strings: ["Python", "IPA beers", "Blockchain", "Dogs", "Ramen", "Autonomous Cars", "Scuba diving", "Drones", "Space", "Virtual Reality"],
-
-		typeSpeed:110,backDelay:700,contentType:"html",loop:!0,resetCallback:function(){newTyped()}}),$(".reset").click(function(){$("#typed").typed("reset")})});
-    </script>
 </body>
 </html>

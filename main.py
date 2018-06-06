@@ -11,6 +11,9 @@
 
 import datetime as dt
 import os
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib
 
 from flask import Flask, flash, request, render_template, redirect, send_file, url_for, abort
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
@@ -23,6 +26,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
 
+from Robinhood import Robinhood
 
 
 app = Flask(__name__)
@@ -36,12 +40,79 @@ if 'ec2-user' in home_path:
     home_path = '/home/ec2-user/takaomattcom'
 par_path = os.path.dirname(home_path)
 
+RUN_APP = False
+
+with open(par_path + '/auth/robinhood.txt') as f:
+    contents = f.read().split('\n')
+    robinhood_username = contents[0]
+    robinhood_password = contents[1]
+
+with open('robinhood-historical-portfolio.txt') as f:
+    historical_values = [x.split(',') for x in f.read().split('\n')[:-1]]
+
+my_trader = Robinhood()
+my_trader.login(username=robinhood_username, password=robinhood_password)
+equity = my_trader.equity()
+now = dt.datetime.now()
+now_date = '{}-{}-{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day))
+if historical_values[-1][0] == now_date:
+    pass
+    # replace old one?
+else:
+    historical_values.append([now_date, equity])
+
+
+fig, ax = plt.subplots(figsize = (10, 6))
+#plt.figure(facecolor='w',figsize=(10.,6.))
+fig.suptitle('Historical Portfolio Value', size='xx-large')
+
+equities = [x[1] for x in historical_values]
+dates = [x[0] for x in historical_values]
+dates = [dt.datetime.strptime(x, '%Y-%m-%d') for x in dates]
+dates = matplotlib.dates.date2num(dates)
+curr_value = [equities[-1] for _ in historical_values]
+min_value = [max(equities) for _ in historical_values]
+max_value = [min(equities) for _ in historical_values]
+
+ax.plot_date(dates, equities, '-', color='#63F6B7', lw=3)
+ax.plot_date(dates, curr_value, '-', color='#404040')
+ax.plot_date(dates, min_value, '-', color='#808080')
+ax.plot_date(dates, max_value, '-', color='#808080')
+upper_limit = float(max(equities)) * 1.2
+up_offset = upper_limit * .01
+down_offset = upper_limit * .05
+ax.text(dates[3], float(equities[-1]) - down_offset, 'Current value: ${}'.format(equities[-1]))
+ax.text(dates[3], float(max(equities)) + up_offset, 'Maximum value: ${}'.format(max(equities)))
+ax.text(dates[3], float(min(equities)) - down_offset, 'Minimum value: ${}'.format(min(equities)))
+
+mondays = mdates.WeekdayLocator(mdates.MONDAY)
+months = mdates.MonthLocator()
+monthsFmt = mdates.DateFormatter("%b")
+ax.xaxis.set_major_locator(months)
+ax.xaxis.set_major_formatter(monthsFmt)
+ax.xaxis.set_minor_locator(mondays)
+
+ax.set_ylim(0, upper_limit)
+for tick in ax.get_xticklabels():
+    tick.set_rotation(20)
+ax.grid(True)
+
+if True:
+    plt.show()
+else:
+    pylab.savefig('daily_historical_portfolio.png', facecolor='w', edgecolor='w')
+    plt.close()
+
+with open('robinhood-historical-portfolio.txt', 'w') as f:
+    for row in historical_values:
+        f.write('{},{}\n'.format(row[0], row[1]))
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
+    portfolio_ownership = db.Column(db.Float)
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -89,10 +160,24 @@ def bonsai():
 @app.route('/stocks', methods = ['GET', 'POST'])
 @login_required
 def stocks():
+
+    d = {'takaoandrew@gmail.com': 25.45,
+         'takaomatt@gmail.com': 61.87,
+         'mazyyap@gmail.com': 4.31,
+         'takaotim@gmail.com': 8.36}
+
+    if current_user.email in d:
+        print('here', current_user.email)
+        print(d[current_user.email])
+        current_user.portfolio_ownership = d[current_user.email]
+        db.session.commit()
+
+
     stocks_data_dir = par_path + '/capit-vita/data/'
     images = os.listdir(stocks_data_dir)
     today = dt.date.today().strftime('%b %d, %Y')
-    return render_template('stocks.html', images=images, today=today)
+    portfolio_ownership = current_user.portfolio_ownership
+    return render_template('stocks.html', images=images, today=today, portfolio_ownership=portfolio_ownership)
 
 @app.route('/return-files/')
 def return_files_tut():
@@ -128,7 +213,7 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        user = User(username=form.username.data, email=form.email.data, portfolio_ownership=0)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -211,7 +296,9 @@ def fitness():
     print('  Complete [], Mastered []') # mastered = +5 lbs
 
 if __name__ == '__main__':
-    if os.getcwd() == r'C:\Users\Takkeezi\Documents\python\takaomattcom\website':
-        app.run()
+
+    if os.getcwd() == r'C:\Users\Takkeezi\Documents\python\takaomattcom\website' or os.getcwd() == '/Users/takaomatt/Documents/python-projects/takaomattcom':
+        if RUN_APP:
+            app.run()
     else:
         app.run(host='0.0.0.0', port = 80)
