@@ -70,18 +70,17 @@ equities = [x[1] for x in historical_values]
 dates = [x[0] for x in historical_values]
 dates = [dt.datetime.strptime(x, '%Y-%m-%d') for x in dates]
 dates = matplotlib.dates.date2num(dates)
-max_value = [max(equities) for _ in historical_values]
-min_value = [min(equities) for _ in historical_values]
+last_equity = [equities[-1] for _ in historical_values]
 
 ax.plot_date(dates, equities, '-', color='#63F6B7', lw=3)
-ax.plot_date(dates, min_value, '-', color='#808080', alpha = 0.7)
-ax.plot_date(dates, max_value, '-', color='#808080', alpha = 0.7)
+ax.plot_date(dates, last_equity, '-', color='#63F6B7', lw=1, alpha = 0.8)
 upper_limit = float(max(equities)) * 1.2
-up_offset = upper_limit * .01
-down_offset = upper_limit * .05
-ax.text(dates[3], float(equities[-1]) - down_offset, 'Total change: ${}'.format(float(equities[-1]) - float(equities[0])))
-ax.text(dates[3], float(max(equities)) + up_offset, '${}'.format(max(equities)))
-ax.text(dates[3], float(min(equities)) - down_offset, '${}'.format(min(equities)))
+gain_loss = float(equities[-1]) - float(equities[0])
+if gain_loss >= 0:
+    gain_loss = '+$' + str(gain_loss)
+else:
+    gain_loss = '+$' + str(gain_loss)
+ax.text(dates[3], float(equities[-1]) * 1.05, 'Total change: {}'.format(gain_loss))
 
 mondays = mdates.WeekdayLocator(mdates.MONDAY)
 months = mdates.MonthLocator()
