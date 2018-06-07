@@ -11,9 +11,6 @@
 
 import datetime as dt
 import os
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib
 
 from flask import Flask, flash, request, render_template, redirect, send_file, url_for, abort
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
@@ -25,8 +22,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
-
-from Robinhood import Robinhood
 
 
 app = Flask(__name__)
@@ -40,69 +35,8 @@ if 'ec2-user' in home_path:
     home_path = '/home/ec2-user/takaomattcom'
 par_path = os.path.dirname(home_path)
 
-RUN_APP = False
+RUN_APP = True
 
-with open(par_path + '/auth/robinhood.txt') as f:
-    contents = f.read().split('\n')
-    robinhood_username = contents[0]
-    robinhood_password = contents[1]
-
-with open('robinhood-historical-portfolio.txt') as f:
-    historical_values = [x.split(',') for x in f.read().split('\n')[:-1]]
-
-my_trader = Robinhood()
-my_trader.login(username=robinhood_username, password=robinhood_password)
-equity = my_trader.equity()
-now = dt.datetime.now()
-now_date = '{}-{}-{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day))
-if historical_values[-1][0] == now_date:
-    pass
-    # replace old one?
-else:
-    historical_values.append([now_date, equity])
-
-
-fig, ax = plt.subplots(figsize = (10, 6))
-#plt.figure(facecolor='w',figsize=(10.,6.))
-fig.suptitle('Historical Portfolio Value', size='xx-large')
-
-equities = [x[1] for x in historical_values]
-dates = [x[0] for x in historical_values]
-dates = [dt.datetime.strptime(x, '%Y-%m-%d') for x in dates]
-dates = matplotlib.dates.date2num(dates)
-last_equity = [equities[-1] for _ in historical_values]
-
-ax.plot_date(dates, equities, '-', color='#63F6B7', lw=3)
-ax.plot_date(dates, last_equity, '-', color='#63F6B7', lw=1, alpha = 0.8)
-upper_limit = float(max(equities)) * 1.2
-gain_loss = float(equities[-1]) - float(equities[0])
-if gain_loss >= 0:
-    gain_loss = '+$' + str(gain_loss)
-else:
-    gain_loss = '+$' + str(gain_loss)
-ax.text(dates[3], float(equities[-1]) * 1.05, 'Total change: {}'.format(gain_loss))
-
-mondays = mdates.WeekdayLocator(mdates.MONDAY)
-months = mdates.MonthLocator()
-monthsFmt = mdates.DateFormatter("%b")
-ax.xaxis.set_major_locator(months)
-ax.xaxis.set_major_formatter(monthsFmt)
-ax.xaxis.set_minor_locator(mondays)
-
-ax.set_ylim(0, upper_limit)
-for tick in ax.get_xticklabels():
-    tick.set_rotation(20)
-ax.grid(True)
-
-if True:
-    plt.show()
-else:
-    pylab.savefig('daily_historical_portfolio.png', facecolor='w', edgecolor='w')
-    plt.close()
-
-with open('robinhood-historical-portfolio.txt', 'w') as f:
-    for row in historical_values:
-        f.write('{},{}\n'.format(row[0], row[1]))
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
