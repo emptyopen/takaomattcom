@@ -84,6 +84,10 @@ class Robinhood:
     #GET DATA
     ##############################
 
+<<<<<<< HEAD
+    def investment_profile(self):
+        self.session.get(self.endpoints['investment_profile'])
+=======
     def get_API_summary(self):
         res = self.session.get("https://api.robinhood.com/")
         res = res.json()
@@ -93,6 +97,7 @@ class Robinhood:
         res = self.session.get(self.endpoints['investment_profile'])
         res = res.json()
         return res
+>>>>>>> f39383da6b3e9b61a5e169df8d441f0979e3d8ed
 
     def instruments(self, stock=None):
         res = self.session.get(self.endpoints['instruments'], params={'query':stock.upper()})
