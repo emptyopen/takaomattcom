@@ -31,9 +31,10 @@
 			    <nav id="navbar-1" class="navbar item-nav">
 				    <ul>
               {% if current_user.is_anonymous %}
-              <li><a class="login-logout-button" href="{{ url_for('login') }}">Login</a></li>
+              <li><a class="user-button" href="{{ url_for('login') }}">Login</a></li>
               {% else %}
-              <li><a class="login-logout-button" href="{{ url_for('logout') }}">Logout {{user}}</a></li>
+              <li><a class="user-button" href="{{ url_for('account_settings') }}">Settings</a></li>
+              <li><a class="user-button" href="{{ url_for('logout') }}">Logout</a></li>
               {% endif %}
               <li>|</li>
 				      <li class="active"><a href="#about">About</a></li>

@@ -26,16 +26,17 @@
 			    <nav id="navbar-1" class="navbar item-nav">
 				    <ul>
               {% if current_user.is_anonymous %}
-              <li><a class="login-logout-button" href="{{ url_for('login') }}">Login</a></li>
+              <li><a class="user-button" href="{{ url_for('login') }}">Login</a></li>
               {% else %}
-              <li><a class="login-logout-button" href="{{ url_for('logout') }}">Logout {{user}}</a></li>
+              <li><a class="user-button" href="{{ url_for('account_settings') }}">Settings</a></li>
+              <li><a class="user-button" href="{{ url_for('logout') }}">Logout</a></li>
               {% endif %}
               <li>|</li>
-                <li><a href="/">Home</a></li>
-                <li>|</li>
-                <li><a href="bonsai">The Bonsai Blog</a></li>
-                <li>|</li>
-                <li><a href="stocks">Stocks</a></li>
+              <li><a href="/">Home</a></li>
+              <li>|</li>
+              <li><a href="bonsai">The Bonsai Blog</a></li>
+              <li>|</li>
+              <li><a href="stocks">Stocks</a></li>
 				    </ul>
 				</nav>
 			</header>

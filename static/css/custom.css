@@ -28,9 +28,8 @@ a:hover {
   max-width: 800px;
   padding: 0 20px; }
 
-.login-logout-button {
-  font-family: "Playfair Display SC", serif;
-  padding: 5px 10px;
+.user-button {
+  padding: 4px 8px;
   border: 2px;
   border-color:#287EC7;
   border-style:solid;
@@ -81,13 +80,14 @@ a:hover {
     opacity: 0; }
   100% {
     opacity: 1; } }
+
 .main-nav {
   background: #f4f4f4;
-  padding-top: 23px; }
+  padding-top: 23px;}
   .main-nav nav ul li a {
-    color: #a7a7a7; }
+    color: #a7a7a7;}
   .main-nav nav ul li.active a {
-    color: #4d4d4d; }
+    color: #4d4d4d;}
 
 .section.second {
   margin-bottom: 90px; }

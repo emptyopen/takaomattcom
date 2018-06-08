@@ -25,11 +25,18 @@
 				</div>
 			    <nav id="navbar-1" class="navbar item-nav">
 				    <ul>
-                <li><a href="/">Home</a></li>
-                <li>|</li>
-                <li><a href="bonsai">The Bonsai Blog</a></li>
-                <li>|</li>
-                <li><a href="stocks">Stocks</a></li>
+              {% if current_user.is_anonymous %}
+              <li><a class="user-button" href="{{ url_for('login') }}">Login</a></li>
+              {% else %}
+              <li><a class="user-button" href="{{ url_for('account_settings') }}">Settings</a></li>
+              <li><a class="user-button" href="{{ url_for('logout') }}">Logout</a></li>
+              {% endif %}
+              <li>|</li>
+              <li><a href="/">Home</a></li>
+              <li>|</li>
+              <li><a href="bonsai">The Bonsai Blog</a></li>
+              <li>|</li>
+              <li><a href="stocks">Stocks</a></li>
 				    </ul>
 				</nav>
 			</header>
@@ -39,43 +46,13 @@
   <br>
   <br>
 
-
-  <div class="container">
-    <h1>Register</h1>
-      <form action="" method="post">
-          {{ form.hidden_tag() }}
-          <p>
-              {{ form.username.label }}<br>
-              {{ form.username(size=32) }}<br>
-              {% for error in form.username.errors %}
-              <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
-          </p>
-          <p>
-              {{ form.email.label }}<br>
-              {{ form.email(size=64) }}<br>
-              {% for error in form.email.errors %}
-              <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
-          </p>
-          <p>
-              {{ form.password.label }}<br>
-              {{ form.password(size=32) }}<br>
-              {% for error in form.password.errors %}
-              <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
-          </p>
-          <p>
-              {{ form.password2.label }}<br>
-              {{ form.password2(size=32) }}<br>
-              {% for error in form.password2.errors %}
-              <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
-          </p>
-          <p>{{ form.submit() }}</p>
-      </form>
-  </div>
-
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-info" role="alert">{{ message }}</div>
+      {% endfor %}
+  {% endif %}
+  {% endwith %}
 
 
 	<!-- Javascript -->

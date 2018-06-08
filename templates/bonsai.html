@@ -26,9 +26,10 @@
 			    <nav id="navbar-1" class="navbar item-nav">
 				    <ul>
               {% if current_user.is_anonymous %}
-              <li><a class="login-logout-button" href="{{ url_for('login') }}">Login</a></li>
+              <li><a class="user-button" href="{{ url_for('login') }}">Login</a></li>
               {% else %}
-              <li><a class="login-logout-button" href="{{ url_for('logout') }}">Logout {{user}}</a></li>
+              <li><a class="user-button" href="{{ url_for('account_settings') }}">Settings</a></li>
+              <li><a class="user-button" href="{{ url_for('logout') }}">Logout</a></li>
               {% endif %}
               <li>|</li>
                 <li><a href="/">Home</a></li>
@@ -69,13 +70,6 @@
     </div>
   </div>
 
-
-	<!-- Quote -->
-	<div class="quote">
-		<div class="container text-centered">
-			<h1>まず同じ銀河に生まれた事。同じ種に生まれ、生きる時間が重なる事。人と人が出会う事の奇跡的な確率。笑う事も悲しむ事も恋も皆1％の可能性の集まりだから僕は目が眩む。世界はこんなにも色とりどりの奇跡にあふれている。 <br><br> "First, we are born in the same galaxy. Born of the same species. Our lifetimes overlap. <br><br>The meetings between humans are so unlikely as to be miraculous. To laugh, to cry, and to fall in love. <br><br>Everyone is made up of a collection of 1% chances, and I am dazzled by the fact that there are so many miracles in this world."</h1>
-		</div>
-	</div>
 
 	<footer>
 		<div class="container">
