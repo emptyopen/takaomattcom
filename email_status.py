@@ -42,7 +42,7 @@ class EmailStatus(object):
         self.server = smtplib.SMTP('smtp.gmail.com', 587)
         self.server.starttls()
         self.server.login('takaomattpython@gmail.com', email_password)
-        
+
         # frequency: daily, weekly, monthly, quarterly, never
         self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'weekly'],
                       'tim':['Tim', 0.0836, 'takaotim@gmail.com', 'weekly'],
