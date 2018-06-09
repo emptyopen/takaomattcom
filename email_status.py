@@ -51,12 +51,12 @@ class EmailStatus(object):
                       'andrew':['Andrew', 0.2545, 'takaoandrew@gmail.com', 'weekly']}
 
 
-    def create_daily_historical_value_plot(self):
+    def create_daily_historical_value_plot(self, ownership=1):
 
         conn = sqlite3.connect('portfolio_history.db')
         cursor = conn.cursor()
 
-        equities = [x[0] for x in cursor.execute('SELECT equity FROM portfolio_history ORDER BY portfolio_date').fetchall()]
+        equities = [x[0] * ownership for x in cursor.execute('SELECT equity FROM portfolio_history ORDER BY portfolio_date').fetchall()]
         dates = [dt.datetime.strptime(x[0], '%Y-%m-%d') for x in cursor.execute('SELECT portfolio_date FROM portfolio_history ORDER BY portfolio_date').fetchall()]
         dates = mdates.date2num(dates)
         upper_limit = float(max(equities)) * 1.2
@@ -67,7 +67,7 @@ class EmailStatus(object):
             total_change = '-${0:,.2f}'.format(total_change)
 
         fig, ax = plt.subplots(figsize = (10, 6))
-        fig.suptitle('3-Month Portfolio Value', size='xx-large')
+        #fig.suptitle('3-Month Portfolio Value', size='xx-large')
 
         ax.plot_date(dates, equities, '-', color='#63F6B7', lw=3)
         props = dict(boxstyle='round', facecolor='#63F6B7', alpha=0.7)
@@ -125,15 +125,18 @@ class EmailStatus(object):
             self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'weekly']}
 
         for user in self.users:
+            print('sending to {}: {}'.format(self.users[user][0], self.users[user][1]))
+            self.create_daily_historical_value_plot(self.users[user][1])
             contents = self.users[user]
             # weekly = every monday
             # monthly = first monday of every month
             # quarterly = first monday of January, April, July, October
             if contents[3] == 'weekly':
                 self.send_email(contents[0], contents[1], contents[2])
+            if os.path.isfile('static/img/daily_historical_portfolio.png'):
+                os.remove('static/img/daily_historical_portfolio.png')
 
 
 
 E = EmailStatus()
-#E.create_daily_historical_value_plot()
 E.send_emails()
