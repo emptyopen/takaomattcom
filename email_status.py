@@ -18,6 +18,13 @@ import pylab
 import sqlite3
 from Robinhood import Robinhood
 
+'''
+to do
+
+fix EC2 sending gmail
+add daily historical portfolio value addition EC2
+'''
+
 class EmailStatus(object):
 
     def __init__(self):
@@ -119,19 +126,28 @@ class EmailStatus(object):
         self.server.sendmail('takaomattpython@gmail.com', email_address, msg.as_string())
         self.server.quit()
 
+
     def send_emails(self):
 
         if True:
             self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'weekly']}
 
         for user in self.users:
-            print('sending to {}: {}'.format(self.users[user][0], self.users[user][1]))
             self.create_daily_historical_value_plot(self.users[user][1])
             contents = self.users[user]
             # weekly = every monday
             # monthly = first monday of every month
             # quarterly = first monday of January, April, July, October
-            if contents[3] == 'weekly':
+            send_if = []
+            today = dt.date.today()
+            if today.weekday() == 0:
+                send_if.append('weekly')
+            if today.day <= 7 and today.weekday() == 0:
+                send_if.append('monthly')
+            if today.month in [1, 4, 7, 10] and today.day <= 7 and today.weekday() == 0:
+                send_if.append('quarterly')
+            if contents[3] in send_if:
+                print('sending to {}: {}'.format(self.users[user][0], self.users[user][1]))
                 self.send_email(contents[0], contents[1], contents[2])
             if os.path.isfile('static/img/daily_historical_portfolio.png'):
                 os.remove('static/img/daily_historical_portfolio.png')
