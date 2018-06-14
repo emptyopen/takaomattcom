@@ -44,7 +44,7 @@ class EmailStatus(object):
 
         self.my_trader = Robinhood()
         self.my_trader.login(username=RH_username, password=RH_password)
-        self.equity = self.my_trader.equity() + 900
+        self.equity = self.my_trader.equity()
 
 
         self.server = smtplib.SMTP('smtp.gmail.com', 587)
