@@ -130,7 +130,7 @@ class EmailStatus(object):
     def send_emails(self, force=False):
 
         if True:
-            self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'weekly']}
+            self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'MThF']}
 
         for user in self.users:
             self.create_daily_historical_value_plot(self.users[user][1])
@@ -140,6 +140,8 @@ class EmailStatus(object):
             # quarterly = first monday of January, April, July, October
             send_if = []
             today = dt.date.today()
+            if today.weekday() in [0, 3, 4]:
+                send_if.append('MThF')
             if today.weekday() == 0:
                 send_if.append('weekly')
             if today.day <= 7 and today.weekday() == 0:
@@ -155,4 +157,4 @@ class EmailStatus(object):
 
 
 E = EmailStatus()
-E.send_emails(force=True)
+#E.send_emails(force=True)
