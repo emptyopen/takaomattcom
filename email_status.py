@@ -21,8 +21,6 @@ from Robinhood import Robinhood
 '''
 to do
 
-fix EC2 sending gmail
-add daily historical portfolio value addition EC2
 '''
 
 class EmailStatus(object):
