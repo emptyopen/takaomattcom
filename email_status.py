@@ -127,7 +127,7 @@ class EmailStatus(object):
         self.server.quit()
 
 
-    def send_emails(self):
+    def send_emails(self, force=False):
 
         if True:
             self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'weekly']}
@@ -146,7 +146,7 @@ class EmailStatus(object):
                 send_if.append('monthly')
             if today.month in [1, 4, 7, 10] and today.day <= 7 and today.weekday() == 0:
                 send_if.append('quarterly')
-            if contents[3] in send_if:
+            if contents[3] in send_if or force:
                 print('sending to {}: {}'.format(self.users[user][0], self.users[user][1]))
                 self.send_email(contents[0], contents[1], contents[2])
             if os.path.isfile('static/img/daily_historical_portfolio.png'):
@@ -155,4 +155,4 @@ class EmailStatus(object):
 
 
 E = EmailStatus()
-E.send_emails()
+E.send_emails(force=True)
