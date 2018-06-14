@@ -74,8 +74,8 @@ class EmailStatus(object):
         fig, ax = plt.subplots(figsize = (10, 6))
         #fig.suptitle('3-Month Portfolio Value', size='xx-large')
 
-        ax.plot_date(dates, equities, '-', color='#63F6B7', lw=3)
-        props = dict(boxstyle='round', facecolor='#63F6B7', alpha=0.7)
+        ax.plot_date(dates, equities, '-', color='#3fcaff', lw=3)
+        props = dict(boxstyle='round', facecolor='#3fcaff', alpha=0.7)
         ax.text(dates[7], float(equities[-1]), 'Total change: {}'.format(total_change), bbox=props)
 
         mondays = mdates.WeekdayLocator(mdates.MONDAY)
@@ -155,4 +155,4 @@ class EmailStatus(object):
 
 
 E = EmailStatus()
-#E.send_emails(force=True)
+E.send_emails(force=True)
