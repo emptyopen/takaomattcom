@@ -7,6 +7,7 @@ home_path = os.path.abspath(os.getcwd())
 if 'ec2-user' in home_path:
     home_path = '/home/ec2-user/takaomattcom'
 par_path = os.path.dirname(home_path)
+home_path += '/'
 
 with open(par_path + '/auth/robinhood.txt') as f:
     contents = f.read().split('\n')
