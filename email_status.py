@@ -28,14 +28,16 @@ class EmailStatus(object):
     def __init__(self):
         self.home_path = os.path.abspath(os.getcwd())
         if 'ec2-user' in self.home_path:
-            self.home_path = '/home/ec2-user/capit-vita'
-        self.par_path = os.path.dirname(self.home_path) + '/'
-        self.home_path = self.home_path + '/'
+            self.home_path = '/home/ec2-user/takaomattcom'
+	    self.par_path = '/home/ec2-user/'
+	else:
+            self.par_path = os.path.dirname(self.home_path) + '/'
+        self.home_path += '/'
 
-        with open(os.pardir + '/auth/takaomattpython.txt') as f:
+        with open(self.par_path + '/auth/takaomattpython.txt') as f:
             email_password = f.read()
-
-        with open(os.pardir + '/auth/robinhood.txt') as f:
+	
+        with open(self.par_path + '/auth/robinhood.txt') as f:
             data = f.read().split('\n')
             RH_username = data[0]
             RH_password = data[1]
@@ -50,7 +52,7 @@ class EmailStatus(object):
         self.server.login('takaomattpython@gmail.com', email_password)
 
         # frequency: daily, weekly, monthly, quarterly, never
-        self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'weekly'],
+        self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'daily'],
                       'tim':['Tim', 0.0836, 'takaotim@gmail.com', 'weekly'],
                       'mazy':['Mazy', 0.0431, 'mazyyap@gmail.com', 'weekly'],
                       'andrew':['Andrew', 0.2545, 'takaoandrew@gmail.com', 'weekly']}
@@ -58,7 +60,7 @@ class EmailStatus(object):
 
     def create_daily_historical_value_plot(self, ownership=1):
 
-        conn = sqlite3.connect('portfolio_history.db')
+        conn = sqlite3.connect(self.home_path + 'portfolio_history.db')
         cursor = conn.cursor()
 
         equities = [x[0] * ownership for x in cursor.execute('SELECT equity FROM portfolio_history ORDER BY portfolio_date').fetchall()]
@@ -98,7 +100,7 @@ class EmailStatus(object):
         if False:
             plt.show()
         else:
-            pylab.savefig('static/img/daily_historical_portfolio.png', facecolor='w', edgecolor='w')
+            pylab.savefig(self.home_path + 'static/img/daily_historical_portfolio.png', facecolor='w', edgecolor='w')
             plt.close()
 
 
@@ -111,7 +113,7 @@ class EmailStatus(object):
 
         THIS_DIR = os.path.dirname(os.path.abspath(__file__))
         j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
-        daily_img = 'static/img/daily_historical_portfolio.png'
+        daily_img = self.home_path + 'static/img/daily_historical_portfolio.png'
         html = j2_env.get_template('templates/email_template.html').render(AMOUNT = '${0:,.2f}'.format(self.equity * percent_owned), daily_img=daily_img)
         html = MIMEText(html, 'html')
         msg.attach(html)
@@ -127,8 +129,8 @@ class EmailStatus(object):
 
     def send_emails(self, force=False):
 
-        if True:
-            self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'MThF']}
+        if False:
+            self.users = {'matt':['Matt', 0.6187, 'takaomatt@gmail.com', 'daily']}
 
         for user in self.users:
             self.create_daily_historical_value_plot(self.users[user][1])
@@ -136,10 +138,8 @@ class EmailStatus(object):
             # weekly = every monday
             # monthly = first monday of every month
             # quarterly = first monday of January, April, July, October
-            send_if = []
+            send_if = ['daily']
             today = dt.date.today()
-            if today.weekday() in [0, 3, 4]:
-                send_if.append('MThF')
             if today.weekday() == 0:
                 send_if.append('weekly')
             if today.day <= 7 and today.weekday() == 0:
@@ -155,4 +155,4 @@ class EmailStatus(object):
 
 
 E = EmailStatus()
-E.send_emails(force=True)
+E.send_emails()
