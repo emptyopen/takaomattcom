@@ -20,7 +20,7 @@ equity = my_trader.equity()
 now = dt.datetime.now()
 now_date = '{}-{}-{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day))
 
-conn = sqlite3.connect('portfolio_history.db')
+conn = sqlite3.connect(home_path + 'portfolio_history.db')
 cursor = conn.cursor()
 
 #cursor.execute('DROP TABLE portfolio_history')
