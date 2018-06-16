@@ -3,3 +3,4 @@ static/img/daily_historical_portfolio.png
 /env
 static/img/stocks/*
 !static/img/stocks/.gitkeep
+users.db
