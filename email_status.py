@@ -46,10 +46,6 @@ class EmailStatus(object):
         self.my_trader.login(username=RH_username, password=RH_password)
         self.equity = self.my_trader.equity()
 
-        self.server = smtplib.SMTP('smtp.gmail.com', 587)
-        self.server.starttls()
-        self.server.login('takaomattpython@gmail.com', email_password)
-
         conn_users = sqlite3.connect(self.home_path + 'users.db')
         cursor_users = conn_users.cursor()
         self.users = cursor_users.execute("SELECT * FROM user;").fetchall()
@@ -132,6 +128,10 @@ class EmailStatus(object):
 
 
     def send_status_emails(self, force=False):
+
+        self.server = smtplib.SMTP('smtp.gmail.com', 587)
+        self.server.starttls()
+        self.server.login('takaomattpython@gmail.com', email_password)
 
         # debug
         if True:
