@@ -146,6 +146,8 @@ class EmailStatus(object):
         if False:
             self.users = {}
 
+	print(self.users)
+
         for user in self.users:
             self.create_daily_historical_value_plot(self.users[user][1])
             contents = self.users[user]
