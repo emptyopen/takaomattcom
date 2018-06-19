@@ -34,9 +34,6 @@ class EmailStatus(object):
             self.par_path = os.path.dirname(self.home_path) + '/'
         self.home_path += '/'
 
-        with open(self.par_path + '/auth/takaomattpython.txt') as f:
-            email_password = f.read()
-
         with open(self.par_path + '/auth/robinhood.txt') as f:
             data = f.read().split('\n')
             RH_username = data[0]
@@ -129,9 +126,8 @@ class EmailStatus(object):
 
     def send_status_emails(self, force=False):
 
-        self.server = smtplib.SMTP('smtp.gmail.com', 587)
-        self.server.starttls()
-        self.server.login('takaomattpython@gmail.com', email_password)
+        with open(self.par_path + '/auth/takaomattpython.txt') as f:
+            email_password = f.read()
 
         # debug
         if True:
@@ -140,8 +136,9 @@ class EmailStatus(object):
                           'mazyyap@gmail.com':['Mazy', 0.0431, 'Weekly'],
                           'takaoandrew@gmail.com':['Andrew', 0.2545, 'Weekly']}
 
-        if False:
-            self.users = {'takaomatt@gmail.com':['Matt', 0.6187, 'Daily']}
+        if True:
+            self.users = {'takaomatt@gmail.com':['Matt', 0.6187, 'Daily'],
+                          'mtblue000@gmail.com':['Matt', 1, 'Daily']}
 
         if False:
             self.users = {}
@@ -149,6 +146,9 @@ class EmailStatus(object):
 	print(self.users)
 
         for user in self.users:
+            self.server = smtplib.SMTP('smtp.gmail.com', 587)
+            self.server.starttls()
+            self.server.login('takaomattpython@gmail.com', email_password)
             self.create_daily_historical_value_plot(self.users[user][1])
             contents = self.users[user]
             # weekly = every monday
