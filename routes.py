@@ -18,15 +18,17 @@ if 'ec2-user' in home_path:
 par_path = os.path.dirname(home_path)
 
 
-@app.route('/', methods = ['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
 
-@app.route('/bonsai', methods = ['GET', 'POST'])
+
+@app.route('/bonsai', methods=['GET', 'POST'])
 def bonsai():
     return render_template('bonsai.html')
 
-@app.route('/stocks', methods = ['GET', 'POST'])
+
+@app.route('/stocks', methods=['GET', 'POST'])
 @login_required
 def stocks():
     d = {'takaoandrew@gmail.com': 25.45,
@@ -40,9 +42,11 @@ def stocks():
     images = os.listdir(stocks_data_dir)
     today = dt.date.today().strftime('%b %d, %Y')
     portfolio_ownership = current_user.portfolio_ownership
-    return render_template('stocks.html', images=images, today=today, portfolio_ownership=portfolio_ownership)
+    return render_template('stocks.html', images=images, today=today,
+                           portfolio_ownership=portfolio_ownership)
 
-@app.route('/account_settings', methods = ['GET', 'POST'])
+
+@app.route('/account_settings', methods=['GET', 'POST'])
 @login_required
 def account_settings():
     form = AccountSettingsForm()
@@ -51,18 +55,22 @@ def account_settings():
         db.session.commit()
     return render_template('account_settings.html', form=form)
 
+
 @app.route('/return-files/')
 def return_files():
-	try:
-		return send_file('static/files/takao-resume.pdf', attachment_filename='takao-resume.pdf')
-	except Exception as e:
-		return str(e)
+    try:
+        return send_file('static/files/takao-resume.pdf',
+                         attachment_filename='takao-resume.pdf')
+    except Exception as e:
+        return str(e)
+
 
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))
 
-@app.route('/login', methods = ['GET', 'POST'])
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -79,19 +87,22 @@ def login():
         return redirect(next_page)
     return render_template('login.html', title='Sign In', form=form)
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data, portfolio_ownership=0, email_frequency='Weekly')
+        user = User(username=form.username.data, email=form.email.data,
+                    portfolio_ownership=0, email_frequency='Weekly')
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
+
 
 @app.route("/logout")
 @login_required

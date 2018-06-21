@@ -19,7 +19,8 @@ my_trader.login(username=robinhood_username, password=robinhood_password)
 equity = my_trader.equity()
 
 now = dt.datetime.now()
-now_date = '{}-{}-{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day))
+now_date = '{}-{}-{}'.format(now.year, '{:02d}'.format(now.month),
+                             '{:02d}'.format(now.day))
 
 conn = sqlite3.connect(home_path + 'portfolio_history.db')
 cursor = conn.cursor()
@@ -28,7 +29,9 @@ cursor = conn.cursor()
 #cursor.execute('CREATE TABLE portfolio_history (portfolio_date date, equity real)')
 #cursor.execute('INSERT INTO portfolio_history VALUES (?, ?)', (row[0], row[1]))
 
-vals = cursor.execute('SELECT portfolio_date, equity FROM portfolio_history WHERE portfolio_date=?', (now_date, )).fetchall()
+vals = cursor.execute('SELECT portfolio_date, equity FROM portfolio_history \
+                       WHERE portfolio_date=?', (now_date, )).fetchall()
 if len(vals) == 0:
-    cursor.execute('INSERT INTO portfolio_history VALUES (?, ?)', (now_date, equity))
+    cursor.execute('INSERT INTO portfolio_history VALUES (?, ?)',
+                   (now_date, equity))
     conn.commit()

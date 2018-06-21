@@ -1,14 +1,17 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, \
+                    SelectField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from models import User
+
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
+
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -28,7 +31,8 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError('Please use a different email address.')
 
+
 class AccountSettingsForm(FlaskForm):
-    choices = [(x,x) for x in ['Weekly', 'Monthly', 'Quarterly', 'Never']]
+    choices = [(x, x) for x in ['Weekly', 'Monthly', 'Quarterly', 'Never']]
     frequency = SelectField('Frequency', choices=choices)
     submit = SubmitField('Save Changes')
