@@ -136,7 +136,7 @@ class EmailStatus(object):
                           'mazyyap@gmail.com':['Mazy', 0.0431, 'Weekly'],
                           'takaoandrew@gmail.com':['Andrew', 0.2545, 'Weekly']}
 
-        if True:
+        if False:
             self.users = {'takaomatt@gmail.com':['Matt', 0.6187, 'Daily'],
                           'mtblue000@gmail.com':['Matt', 1, 'Daily']}
 
