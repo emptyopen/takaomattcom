@@ -9,6 +9,8 @@ import os
 from jinja2 import Template, FileSystemLoader, Environment
 import datetime as dt
 import numpy as np
+import pandas as pd
+import urllib2
 import math
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -39,6 +41,9 @@ class EmailStatus(object):
             RH_username = data[0]
             RH_password = data[1]
 
+        with open(self.par_path + '/auth/alphavantage.txt') as f:
+            self.av_API = f.read().split('\n')[0]
+
         self.my_trader = Robinhood()
         self.my_trader.login(username=RH_username, password=RH_password)
         self.equity = self.my_trader.equity()
@@ -53,7 +58,7 @@ class EmailStatus(object):
         self.users = {str(x[2]): [associate[x[2]], x[4], str(x[5])]
                       for x in self.users}
 
-    def create_daily_historical_value_plot(self, ownership=1):
+    def create_daily_historical_value_plot(self, ownership=1, show=False):
 
         conn = sqlite3.connect(self.home_path + 'portfolio_history.db')
         cursor = conn.cursor()
@@ -65,6 +70,7 @@ class EmailStatus(object):
                  for x in cursor.execute('SELECT portfolio_date \
                                           FROM portfolio_history \
                                           ORDER BY portfolio_date').fetchall()]
+        start_date = str(dates[0].date())
         dates = mdates.date2num(dates)
         upper_limit = float(max(equities)) * 1.2
         total_change = float(equities[-1]) - float(equities[0])
@@ -72,6 +78,25 @@ class EmailStatus(object):
             total_change = '+${0:,.2f}'.format(total_change)
         else:
             total_change = '-${0:,.2f}'.format(total_change)
+
+        tries = 0
+        url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=SPY&outputsize=full&apikey={}'.format(self.av_API)
+        while True:
+            request = urllib2.Request(url, headers={'User-Agent': "Magic Browser"})
+            temp = eval(urllib2.urlopen(request).read())
+            if 'Time Series (Daily)' in temp:
+                break  # exit if successful
+            else:
+                time.sleep(1)
+                tries += 1
+            if tries > 50:  # in case we're trying too many calls?
+                break
+        self.df = pd.DataFrame.from_dict(temp['Time Series (Daily)']).transpose()
+        mask = self.df.index > start_date
+        self.df = self.df.loc[mask]
+        print(self.df)
+        SPY_dates = [dt.datetime.strptime(x, '%Y-%m-%d') for x in self.df.index]
+        SPY_dates = mdates.date2num(SPY_dates)
 
         fig, ax = plt.subplots(figsize=(10, 6))
         # fig.suptitle('3-Month Portfolio Value', size='xx-large')
@@ -98,7 +123,11 @@ class EmailStatus(object):
             tick.set_rotation(20)
         ax.grid(True)
 
-        if False:
+        ax_SPY = ax.twinx()
+        print(self.df['5. adjusted close'])
+        ax_SPY.plot_date(SPY_dates, self.df['5. adjusted close'], '-', color='#808080')
+
+        if show:
             plt.show()
         else:
             pylab.savefig(self.home_path +
@@ -154,8 +183,8 @@ class EmailStatus(object):
                           'takaoandrew@gmail.com': ['Andy', 0.2545, 'Weekly']}
 
         if True:
-            self.users = {'takaomatt@gmail.com':['Matt', 0.6187, 'Daily'],
-                          'mtblue000@gmail.com':['Matt', 1, 'Daily']}
+            self.users = {'takaomatt@gmail.com': ['Matt', 0.6187, 'Daily'],
+                          'mtblue000@gmail.com': ['Matt', 1, 'Daily']}
 
         if False:
             self.users = {}
@@ -186,4 +215,5 @@ class EmailStatus(object):
 
 
 E = EmailStatus()
-E.send_status_emails()
+#E.send_status_emails()
+E.create_daily_historical_value_plot(show=True)
