@@ -20,8 +20,8 @@ from Robinhood import Robinhood
 
 '''
 to do
-
 '''
+
 
 class EmailStatus(object):
 
@@ -29,8 +29,8 @@ class EmailStatus(object):
         self.home_path = os.path.abspath(os.getcwd())
         if 'ec2-user' in self.home_path:
             self.home_path = '/home/ec2-user/takaomattcom'
-	    self.par_path = '/home/ec2-user/'
-	else:
+            self.par_path = '/home/ec2-user/'
+        else:
             self.par_path = os.path.dirname(self.home_path) + '/'
         self.home_path += '/'
 
@@ -46,17 +46,25 @@ class EmailStatus(object):
         conn_users = sqlite3.connect(self.home_path + 'users.db')
         cursor_users = conn_users.cursor()
         self.users = cursor_users.execute("SELECT * FROM user;").fetchall()
-        associate = {'takaomatt@gmail.com':'Matt', 'takaotim@gmail.com':'Tim', 'mazyyap@gmail.com':'Mazy', 'takaoandrew@gmail.com':'Andrew'}
-        self.users = {str(x[2]):[associate[x[2]], x[4], str(x[5])] for x in self.users}
-
+        associate = {'takaomatt@gmail.com': 'Matt',
+                     'takaotim@gmail.com': 'Tim',
+                     'mazyyap@gmail.com': 'Mazy',
+                     'takaoandrew@gmail.com': 'Andrew'}
+        self.users = {str(x[2]): [associate[x[2]], x[4], str(x[5])]
+                      for x in self.users}
 
     def create_daily_historical_value_plot(self, ownership=1):
 
         conn = sqlite3.connect(self.home_path + 'portfolio_history.db')
         cursor = conn.cursor()
 
-        equities = [x[0] * ownership for x in cursor.execute('SELECT equity FROM portfolio_history ORDER BY portfolio_date').fetchall()]
-        dates = [dt.datetime.strptime(x[0], '%Y-%m-%d') for x in cursor.execute('SELECT portfolio_date FROM portfolio_history ORDER BY portfolio_date').fetchall()]
+        equities = [x[0] * ownership for x in cursor.execute('SELECT equity \
+                    FROM portfolio_history \
+                    ORDER BY portfolio_date').fetchall()]
+        dates = [dt.datetime.strptime(x[0], '%Y-%m-%d')
+                 for x in cursor.execute('SELECT portfolio_date \
+                                          FROM portfolio_history \
+                                          ORDER BY portfolio_date').fetchall()]
         dates = mdates.date2num(dates)
         upper_limit = float(max(equities)) * 1.2
         total_change = float(equities[-1]) - float(equities[0])
@@ -65,12 +73,13 @@ class EmailStatus(object):
         else:
             total_change = '-${0:,.2f}'.format(total_change)
 
-        fig, ax = plt.subplots(figsize = (10, 6))
-        #fig.suptitle('3-Month Portfolio Value', size='xx-large')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        # fig.suptitle('3-Month Portfolio Value', size='xx-large')
 
         ax.plot_date(dates, equities, '-', color='#3fcaff', lw=3)
         props = dict(boxstyle='round', facecolor='#3fcaff', alpha=0.7)
-        ax.text(dates[7], float(equities[-1]), 'Total change: {}'.format(total_change), bbox=props)
+        s = 'Total change: {}'.format(total_change)
+        ax.text(dates[7], float(equities[-1]), s, bbox=props)
 
         mondays = mdates.WeekdayLocator(mdates.MONDAY)
         months = mdates.MonthLocator()
@@ -92,9 +101,10 @@ class EmailStatus(object):
         if False:
             plt.show()
         else:
-            pylab.savefig(self.home_path + 'static/img/daily_historical_portfolio.png', facecolor='w', edgecolor='w')
+            pylab.savefig(self.home_path +
+                          'static/img/daily_historical_portfolio.png',
+                          facecolor='w', edgecolor='w')
             plt.close()
-
 
     def send_email(self, user):
 
@@ -106,12 +116,19 @@ class EmailStatus(object):
         msg = MIMEMultipart()
         msg['Date'] = formatdate(localtime=True)
         now = dt.datetime.now()
-        msg['Subject'] = 'Your {} Portfolio Status ({}-{}-{})'.format(frequency, now.year, now.month, now.day)
+        s = 'Your {} Portfolio Status ({}-{}-{})'.format(frequency,
+                                                         now.year, now.month,
+                                                         now.day)
+        msg['Subject'] = s
 
         THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-        j2_env = Environment(loader=FileSystemLoader(THIS_DIR), trim_blocks=True)
-        daily_img = self.home_path + 'static/img/daily_historical_portfolio.png'
-        html = j2_env.get_template('templates/email_template.html').render(AMOUNT = '${0:,.2f}'.format(self.equity * percent_owned), daily_img=daily_img)
+        j2_env = Environment(loader=FileSystemLoader(THIS_DIR),
+                             trim_blocks=True)
+        daily_img = self.home_path + \
+            'static/img/daily_historical_portfolio.png'
+        amount = '${0:,.2f}'.format(self.equity * percent_owned)
+        html = j2_env.get_template('templates/email_template.html')
+        html = html.render(AMOUNT=amount, daily_img=daily_img)
         html = MIMEText(html, 'html')
         msg.attach(html)
 
@@ -120,9 +137,9 @@ class EmailStatus(object):
         img.add_header('Content-ID', '<daily_historical_portfolio>')
         msg.attach(img)
 
-        self.server.sendmail('takaomattpython@gmail.com', email_address, msg.as_string())
+        self.server.sendmail('takaomattpython@gmail.com', email_address,
+                             msg.as_string())
         self.server.quit()
-
 
     def send_status_emails(self, force=False):
 
@@ -131,19 +148,17 @@ class EmailStatus(object):
 
         # debug
         if True:
-            self.users = {'takaomatt@gmail.com':['Matt', 0.6187, 'Daily'],
-                          'takaotim@gmail.com':['Tim', 0.0836, 'Weekly'],
-                          'mazyyap@gmail.com':['Mazy', 0.0431, 'Weekly'],
-                          'takaoandrew@gmail.com':['Andrew', 0.2545, 'Weekly']}
+            self.users = {'takaomatt@gmail.com': ['Matt', 0.6187, 'Daily'],
+                          'takaotim@gmail.com': ['Tim', 0.0836, 'Weekly'],
+                          'mazyyap@gmail.com': ['Mazy', 0.0431, 'Weekly'],
+                          'takaoandrew@gmail.com': ['Andy', 0.2545, 'Weekly']}
 
-        if False:
+        if True:
             self.users = {'takaomatt@gmail.com':['Matt', 0.6187, 'Daily'],
                           'mtblue000@gmail.com':['Matt', 1, 'Daily']}
 
         if False:
             self.users = {}
-
-	print(self.users)
 
         for user in self.users:
             self.server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -160,15 +175,14 @@ class EmailStatus(object):
                 send_if.append('Weekly')
             if today.day <= 7 and today.weekday() == 0:
                 send_if.append('Monthly')
-            if today.month in [1, 4, 7, 10] and today.day <= 7 and today.weekday() == 0:
+            if today.month in [1, 4, 7, 10] and today.day <= 7 and \
+                    today.weekday() == 0:
                 send_if.append('Quarterly')
             if self.users[user][2] in send_if or force:
                 print('sending to {}'.format(user))
                 self.send_email(user)
             if os.path.isfile('static/img/daily_historical_portfolio.png'):
                 os.remove('static/img/daily_historical_portfolio.png')
-
-
 
 
 E = EmailStatus()
