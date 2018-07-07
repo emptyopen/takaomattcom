@@ -73,11 +73,6 @@ class EmailStatus(object):
         start_date = str(dates[0].date())
         dates = mdates.date2num(dates)
         upper_limit = float(max(equities)) * 1.2
-        total_change = float(equities[-1]) - float(equities[0])
-        if total_change >= 0:
-            total_change = '+${0:,.2f}'.format(total_change)
-        else:
-            total_change = '-${0:,.2f}'.format(total_change)
 
         tries = 0
         url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=SPY&outputsize=full&apikey={}'.format(self.av_API)
@@ -94,17 +89,14 @@ class EmailStatus(object):
         self.df = pd.DataFrame.from_dict(temp['Time Series (Daily)']).transpose()
         mask = self.df.index > start_date
         self.df = self.df.loc[mask]
-        print(self.df)
         SPY_dates = [dt.datetime.strptime(x, '%Y-%m-%d') for x in self.df.index]
         SPY_dates = mdates.date2num(SPY_dates)
+        SPY_equities = [float(x) for x in self.df['5. adjusted close']]
 
         fig, ax = plt.subplots(figsize=(10, 6))
         # fig.suptitle('3-Month Portfolio Value', size='xx-large')
 
         ax.plot_date(dates, equities, '-', color='#3fcaff', lw=3)
-        props = dict(boxstyle='round', facecolor='#3fcaff', alpha=0.7)
-        s = 'Total change: {}'.format(total_change)
-        ax.text(dates[7], float(equities[-1]), s, bbox=props)
 
         mondays = mdates.WeekdayLocator(mdates.MONDAY)
         months = mdates.MonthLocator()
@@ -116,6 +108,7 @@ class EmailStatus(object):
         y_lower = math.floor(min(equities) / 1000) * 1000
         y_upper = math.ceil(max(equities) / 1000) * 1000
         increment = (y_upper - y_lower) / 5
+        text_increment = increment * 0.7
         ax.set_yticks(np.arange(y_lower, y_upper, increment))
         ax.yaxis.set_major_formatter(mtick.StrMethodFormatter('${x:,.0f}'))
         ax.set_ylim(0, upper_limit)
@@ -123,9 +116,36 @@ class EmailStatus(object):
             tick.set_rotation(20)
         ax.grid(True)
 
-        ax_SPY = ax.twinx()
-        print(self.df['5. adjusted close'])
-        ax_SPY.plot_date(SPY_dates, self.df['5. adjusted close'], '-', color='#808080')
+        ratio = equities[0] / SPY_equities[0]
+        SPY_relative_equities = [float(x) * ratio for x in SPY_equities]
+        ax.plot_date(SPY_dates, SPY_relative_equities, '-', color='#A9A9A9')
+
+        total_change = float(equities[-1]) - float(equities[0])
+        total_perc_change = round(float(equities[-1]) / float(equities[0]) * 100 - 100, 1)
+        if total_change >= 0:
+            total_change = '+${0:,.2f}'.format(total_change)
+        else:
+            total_change = '-${0:,.2f}'.format(total_change)
+        SPY_change = float(self.df['5. adjusted close'][-1]) - float(self.df['5. adjusted close'][0])
+        SPY_perc_change = round(float(self.df['5. adjusted close'][-1]) / float(self.df['5. adjusted close'][0]) * 100 - 100, 1)
+        if SPY_change >= 0:
+            SPY_change = '+${0:,.2f}'.format(SPY_change)
+        else:
+            SPY_change = '-${0:,.2f}'.format(SPY_change)
+        props = dict(boxstyle='round', facecolor='#3fcaff', alpha=20)
+        s = '{} ({}%)'.format(total_change, total_perc_change)
+        ax.text(dates[7], upper_limit - text_increment, 'Portfolio value', bbox=props)
+        ax.text(dates[7] + 19, upper_limit - text_increment, s, color='#3fcaff', weight=750)
+        props = dict(boxstyle='round', facecolor='#D3D3D3', alpha=20)
+        s = '{} ({}%)'.format(SPY_change, SPY_perc_change)
+        ax.text(dates[7], upper_limit - text_increment * 2, 'S&P value', bbox=props)
+        ax.text(dates[7] + 19, upper_limit - text_increment * 2, s, color='#A9A9A9', weight=750)
+        if SPY_perc_change > total_perc_change:
+            s = 'S&P outperforming portfolio by {}%'.format(SPY_perc_change - total_perc_change)
+        else:
+            s = 'Portfolio outperforming S&P by {}%'.format(total_perc_change - SPY_perc_change)
+        props = dict(boxstyle='round', facecolor='#ffffff', alpha=20)
+        ax.text(dates[7], upper_limit - text_increment * 3, s, bbox=props)
 
         if show:
             plt.show()
