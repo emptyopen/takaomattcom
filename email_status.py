@@ -135,11 +135,11 @@ class EmailStatus(object):
         props = dict(boxstyle='round', facecolor='#3fcaff', alpha=20)
         s = '{} ({}%)'.format(total_change, total_perc_change)
         ax.text(dates[7], upper_limit - text_increment, 'Portfolio value', bbox=props)
-        ax.text(dates[7] + 19, upper_limit - text_increment, s, color='#3fcaff', weight=750)
+        ax.text(dates[7] + 23, upper_limit - text_increment, s, color='#3fcaff', weight=750)
         props = dict(boxstyle='round', facecolor='#D3D3D3', alpha=20)
         s = '{} ({}%)'.format(SPY_change, SPY_perc_change)
         ax.text(dates[7], upper_limit - text_increment * 2, 'S&P value', bbox=props)
-        ax.text(dates[7] + 19, upper_limit - text_increment * 2, s, color='#A9A9A9', weight=750)
+        ax.text(dates[7] + 23, upper_limit - text_increment * 2, s, color='#A9A9A9', weight=750)
         if SPY_perc_change > total_perc_change:
             s = 'S&P outperforming portfolio by {}%'.format(SPY_perc_change - total_perc_change)
         else:
@@ -197,10 +197,11 @@ class EmailStatus(object):
 
         # debug
         if True:
-            self.users = {'takaomatt@gmail.com': ['Matt', 0.6187, 'Daily'],
-                          'takaotim@gmail.com': ['Tim', 0.0836, 'Weekly'],
-                          'mazyyap@gmail.com': ['Mazy', 0.0431, 'Weekly'],
-                          'takaoandrew@gmail.com': ['Andy', 0.2545, 'Weekly']}
+            self.users = {'takaomatt@gmail.com': ['Matt', 0.5956, 'Daily'],
+                          'takaotim@gmail.com': ['Tim', 0.0805, 'Weekly'],
+                          'mazyyap@gmail.com': ['Mazy', 0.0415, 'Weekly'],
+                          'takaoandrew@gmail.com': ['Andy', 0.2450, 'Weekly'],
+                          'george.asmar.biz@gmail.com': ['George', 0.0373, 'Weekly']}
 
         if True:
             self.users = {'takaomatt@gmail.com': ['Matt', 0.6187, 'Daily'],
