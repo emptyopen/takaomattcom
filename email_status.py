@@ -132,11 +132,11 @@ class EmailStatus(object):
             SPY_change = '+${0:,.2f}'.format(SPY_change)
         else:
             SPY_change = '-${0:,.2f}'.format(SPY_change)
-        props = dict(boxstyle='round', facecolor='#3fcaff', alpha=20)
+        props = dict(boxstyle='round', facecolor='#3fcaff')
         s = '{} ({}%)'.format(total_change, total_perc_change)
         ax.text(dates[7], upper_limit - text_increment, 'Portfolio value', bbox=props)
         ax.text(dates[7] + 23, upper_limit - text_increment, s, color='#3fcaff', weight=750)
-        props = dict(boxstyle='round', facecolor='#D3D3D3', alpha=20)
+        props = dict(boxstyle='round', facecolor='#D3D3D3')
         s = '{} ({}%)'.format(SPY_change, SPY_perc_change)
         ax.text(dates[7], upper_limit - text_increment * 2, 'S&P value', bbox=props)
         ax.text(dates[7] + 23, upper_limit - text_increment * 2, s, color='#A9A9A9', weight=750)
@@ -144,7 +144,7 @@ class EmailStatus(object):
             s = 'S&P outperforming portfolio by {}%'.format(SPY_perc_change - total_perc_change)
         else:
             s = 'Portfolio outperforming S&P by {}%'.format(total_perc_change - SPY_perc_change)
-        props = dict(boxstyle='round', facecolor='#ffffff', alpha=20)
+        props = dict(boxstyle='round', facecolor='#ffffff')
         ax.text(dates[7], upper_limit - text_increment * 3, s, bbox=props)
 
         if show:
@@ -236,5 +236,5 @@ class EmailStatus(object):
 
 
 E = EmailStatus()
-#E.send_status_emails()
-E.create_daily_historical_value_plot(show=True)
+E.send_status_emails()
+#E.create_daily_historical_value_plot(show=True)
