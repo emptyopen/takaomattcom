@@ -9,6 +9,10 @@
     "lint": "next lint",
     "export": "next build"
   },
+  "overrides": {
+    "undici": "^6.21.3",
+    "postcss": "^8.5.15"
+  },
   "dependencies": {
     "next": "^15.5.19",
     "react": "^18.3.1",
