@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Matt Takao',
-  description: 'Projects, apps, and miscellany.',
+  description: 'Software developer at Google.',
 };
 
 export default function RootLayout({
