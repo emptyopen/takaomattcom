@@ -9,7 +9,7 @@ import {
   signOut,
   User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { deleteField, doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   getFirebaseAuth,
   getNextbiteAuth,
@@ -185,8 +185,8 @@ function BannerEditor({
     (async () => {
       try {
         const snap = await getDoc(doc(getNextbiteDb(), 'flags', flagId));
-        const data = (snap.data() as Partial<BannerFlag> | undefined) ?? {};
-        setFlag({ ...emptyFlag, ...data });
+        const data = snap.data() as { enabled?: boolean } | undefined;
+        setFlag({ ...emptyFlag, enabled: data?.enabled ?? false });
       } catch (e) {
         setErr(String(e));
       }
@@ -214,9 +214,19 @@ function BannerEditor({
     setSaving(true);
     setErr(null);
     try {
-      // setDoc + merge so we don't blow away unrelated fields a future
-      // version of the app might add to the same flag doc.
-      await setDoc(doc(getNextbiteDb(), 'flags', flagId), flag, { merge: true });
+      // Write only `enabled`, and drop the legacy text/url/color fields so the
+      // doc collapses to a single bool. deleteField() on absent fields is a
+      // no-op, so this is safe whether or not they exist.
+      await setDoc(
+        doc(getNextbiteDb(), 'flags', flagId),
+        {
+          enabled: flag.enabled,
+          text: deleteField(),
+          url: deleteField(),
+          color: deleteField(),
+        },
+        { merge: true },
+      );
     } catch (e) {
       setErr(String(e));
     } finally {
