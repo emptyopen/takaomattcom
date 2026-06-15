@@ -85,7 +85,6 @@ export default function AdminClient() {
     return (
       <main className="container">
         <h1>Admin</h1>
-        <p>Sign in with Google to manage flags.</p>
         <button
           onClick={async () => {
             try {
