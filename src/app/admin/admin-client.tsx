@@ -26,16 +26,10 @@ const BANNERS: { id: string; label: string }[] = [
 
 type BannerFlag = {
   enabled: boolean;
-  text: string;
-  url: string;
-  color: string;
 };
 
 const emptyFlag: BannerFlag = {
   enabled: false,
-  text: '',
-  url: '',
-  color: '',
 };
 
 // Sign in to the site's project (for the admin gate) and reuse the same Google
@@ -242,30 +236,6 @@ function BannerEditor({
         />{' '}
         Enabled
       </label>
-
-      <label>Text</label>
-      <input
-        type="text"
-        value={flag.text}
-        onChange={(e) => setFlag({ ...flag, text: e.target.value })}
-        placeholder="Banner copy shown to users"
-      />
-
-      <label>URL (optional)</label>
-      <input
-        type="url"
-        value={flag.url}
-        onChange={(e) => setFlag({ ...flag, url: e.target.value })}
-        placeholder="https://…"
-      />
-
-      <label>Background color (optional, #RRGGBB)</label>
-      <input
-        type="text"
-        value={flag.color}
-        onChange={(e) => setFlag({ ...flag, color: e.target.value })}
-        placeholder="#0F766E"
-      />
 
       <div style={{ marginTop: 16 }} className="row">
         <button onClick={save} disabled={saving || !canWrite}>
