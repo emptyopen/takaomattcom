@@ -7,6 +7,8 @@ const nextConfig = {
   output: 'export',
   images: { unoptimized: true },
   reactStrictMode: true,
+  // Hide the dev-only Next.js/Turbopack indicator badge (bottom corner).
+  devIndicators: false,
 };
 
 module.exports = nextConfig;
