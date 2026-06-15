@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithPopup,
   signOut,
   User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { getDb, getFirebaseAuth, isAdmin } from '@/lib/firebase';
+import {
+  getFirebaseAuth,
+  getNextbiteAuth,
+  getNextbiteDb,
+  isAdmin,
+} from '@/lib/firebase';
 
 // Flag IDs the admin portal can edit. Add new entries to expand the
 // surface — each becomes a Banner card on the page. Multiple apps live
@@ -32,9 +38,28 @@ const emptyFlag: BannerFlag = {
   color: '',
 };
 
+// Sign in to the site's project (for the admin gate) and reuse the same Google
+// credential to also sign in to NextBite's project, so banner writes land in
+// NextBite's Firestore authenticated as the same person.
+async function signInBothProjects() {
+  const result = await signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
+  const cred = GoogleAuthProvider.credentialFromResult(result);
+  if (cred) {
+    try {
+      await signInWithCredential(getNextbiteAuth(), cred);
+    } catch (e) {
+      // Credential reuse can fail if the site's OAuth client isn't whitelisted
+      // in NextBite's Google provider. Don't block the admin UI — the
+      // "Connect NextBite" button offers a direct-popup fallback.
+      console.error('NextBite credential sign-in failed:', e);
+    }
+  }
+}
+
 export default function AdminClient() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [nextbiteUser, setNextbiteUser] = useState<User | null>(null);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -42,6 +67,10 @@ export default function AdminClient() {
       setUser(u);
       setAuthChecked(true);
     });
+  }, []);
+
+  useEffect(() => {
+    return onAuthStateChanged(getNextbiteAuth(), setNextbiteUser);
   }, []);
 
   if (!authChecked) {
@@ -60,7 +89,7 @@ export default function AdminClient() {
         <button
           onClick={async () => {
             try {
-              await signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
+              await signInBothProjects();
             } catch (e) {
               console.error(e);
               alert('Sign-in failed. Check console.');
@@ -99,21 +128,62 @@ export default function AdminClient() {
         }}
       >
         <h1>Admin</h1>
-        <button onClick={() => signOut(getFirebaseAuth())}>Sign out</button>
+        <button
+          onClick={() => {
+            signOut(getFirebaseAuth());
+            signOut(getNextbiteAuth());
+          }}
+        >
+          Sign out
+        </button>
       </div>
       <p>
         Signed in as <strong>{user.email}</strong>. Edits write directly to
-        Firestore — clients pick them up in real time.
+        NextBite&apos;s Firestore — the app picks them up in real time.
       </p>
 
+      {!nextbiteUser && (
+        <section className="card" style={{ borderColor: 'crimson' }}>
+          <p style={{ marginTop: 0 }}>
+            Not connected to NextBite — saving is disabled. Connect to authorize
+            writes into NextBite&apos;s project.
+          </p>
+          <button onClick={connectNextbite}>Connect NextBite</button>
+        </section>
+      )}
+
       {BANNERS.map((b) => (
-        <BannerEditor key={b.id} flagId={b.id} label={b.label} />
+        <BannerEditor
+          key={b.id}
+          flagId={b.id}
+          label={b.label}
+          canWrite={!!nextbiteUser}
+        />
       ))}
     </main>
   );
 }
 
-function BannerEditor({ flagId, label }: { flagId: string; label: string }) {
+// Direct-popup fallback to authenticate against NextBite's project when the
+// shared-credential sign-in didn't establish a NextBite session.
+async function connectNextbite() {
+  try {
+    await signInWithPopup(getNextbiteAuth(), new GoogleAuthProvider());
+  } catch (e) {
+    console.error(e);
+    alert('Could not connect to NextBite. Check console.');
+  }
+}
+
+function BannerEditor({
+  flagId,
+  label,
+  canWrite,
+}: {
+  flagId: string;
+  label: string;
+  canWrite: boolean;
+}) {
   const [flag, setFlag] = useState<BannerFlag | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -121,7 +191,7 @@ function BannerEditor({ flagId, label }: { flagId: string; label: string }) {
   useEffect(() => {
     (async () => {
       try {
-        const snap = await getDoc(doc(getDb(), 'flags', flagId));
+        const snap = await getDoc(doc(getNextbiteDb(), 'flags', flagId));
         const data = (snap.data() as Partial<BannerFlag> | undefined) ?? {};
         setFlag({ ...emptyFlag, ...data });
       } catch (e) {
@@ -153,7 +223,7 @@ function BannerEditor({ flagId, label }: { flagId: string; label: string }) {
     try {
       // setDoc + merge so we don't blow away unrelated fields a future
       // version of the app might add to the same flag doc.
-      await setDoc(doc(getDb(), 'flags', flagId), flag, { merge: true });
+      await setDoc(doc(getNextbiteDb(), 'flags', flagId), flag, { merge: true });
     } catch (e) {
       setErr(String(e));
     } finally {
@@ -199,7 +269,7 @@ function BannerEditor({ flagId, label }: { flagId: string; label: string }) {
       />
 
       <div style={{ marginTop: 16 }} className="row">
-        <button onClick={save} disabled={saving}>
+        <button onClick={save} disabled={saving || !canWrite}>
           {saving ? 'Saving…' : 'Save'}
         </button>
         <span style={{ fontSize: 12, color: 'var(--muted)' }}>
