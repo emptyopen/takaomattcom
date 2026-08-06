@@ -10,7 +10,7 @@
     "export": "next build"
   },
   "overrides": {
-    "undici": "^6.21.3",
+    "undici": "^6.27.0",
     "postcss": "^8.5.15"
   },
   "dependencies": {
