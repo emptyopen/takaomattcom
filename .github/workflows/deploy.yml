@@ -66,11 +66,11 @@ jobs:
 
           # Discover the bucket's region (a location constraint of "None" means
           # the legacy us-east-1 default).
-          REGION=$(aws s3api get-bucket-location --bucket takaomatt.com --query 'LocationConstraint' --output text)
+          REGION=$(aws s3api get-bucket-location --bucket takaomatt-com-site --query 'LocationConstraint' --output text)
           [ "$REGION" = "None" ] && REGION=us-east-1
           echo "Bucket region: $REGION"
 
-          aws s3 sync ./out s3://takaomatt.com --delete --region "$REGION"
+          aws s3 sync ./out s3://takaomatt-com-site --delete --region "$REGION"
 
           # Discover the CloudFront distribution that serves takaomatt.com.
           DIST=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, 'takaomatt.com')].Id | [0]" --output text)
