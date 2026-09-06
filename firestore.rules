@@ -11,6 +11,25 @@ service cloud.firestore {
         && request.auth.uid == 'h6yAgTDOXxcavDyNA5dqJsvgcVR2';
     }
 
+    // Account deletion requests from the public /nextbite/delete-account page.
+    // Anyone may create one (users deleting their account are not signed in),
+    // but the payload shape is constrained. Only the admin UID may read or
+    // delete them; updates are never allowed.
+    match /deletion_requests/{requestId} {
+      allow create: if request.resource.data.status == 'pending'
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 5
+        && request.resource.data.email.size() <= 320
+        && (request.resource.data.reason == null
+          || (request.resource.data.reason is string
+            && request.resource.data.reason.size() <= 2000))
+        && request.resource.data.keys().hasOnly(
+          ['email', 'reason', 'status', 'createdAt', 'userAgent']);
+      allow read, delete: if request.auth != null
+        && request.auth.uid == 'h6yAgTDOXxcavDyNA5dqJsvgcVR2';
+      allow update: if false;
+    }
+
     // Default deny for everything else.
     match /{document=**} {
       allow read, write: if false;

@@ -1,0 +1,82 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Public Firebase web config. These NEXT_PUBLIC_* values are inlined into
+    # the client bundle at build time and are public by design — the real
+    # security boundary is the Firestore rules, not these values. They are
+    # therefore safe to keep in the repo. The literal values are now inlined
+    # directly below (previously read from repository Variables), so CI builds
+    # need no additional configuration.
+    env:
+      NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyD8DvgWn09_roCu2dGa448LvI3KfoRSYuk"
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "takaomatt-4bc1e.firebaseapp.com"
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: "takaomatt-4bc1e"
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "takaomatt-4bc1e.firebasestorage.app"
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "873084849985"
+      NEXT_PUBLIC_FIREBASE_APP_ID: "1:873084849985:web:f7bd66b7c652e40894dbc0"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_API_KEY: "AIzaSyBrBNE3TSJ8DZqT5itpkYrbhgev6FwqeQo"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_AUTH_DOMAIN: "nextbite-d761c.firebaseapp.com"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_PROJECT_ID: "nextbite-d761c"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_STORAGE_BUCKET: "nextbite-d761c.firebasestorage.app"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_MESSAGING_SENDER_ID: "956299532839"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_APP_ID: "1:956299532839:web:558aaf3b77cf4e2f99cc02"
+      # Admin allowlist — the Firebase Auth UID permitted into /admin. Public
+      # (also present in firestore.rules); safe to commit.
+      NEXT_PUBLIC_ADMIN_UIDS: "h6yAgTDOXxcavDyNA5dqJsvgcVR2"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: npm run build
+
+      - name: Deploy Firestore rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx --yes firebase-tools deploy --only firestore:rules --project takaomatt-4bc1e --non-interactive
+
+      - name: Publish to S3 and invalidate CloudFront
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+
+          # Discover the bucket's region (a location constraint of "None" means
+          # the legacy us-east-1 default).
+          REGION=$(aws s3api get-bucket-location --bucket takaomatt.com --query 'LocationConstraint' --output text)
+          [ "$REGION" = "None" ] && REGION=us-east-1
+          echo "Bucket region: $REGION"
+
+          aws s3 sync ./out s3://takaomatt.com --delete --region "$REGION"
+
+          # Discover the CloudFront distribution that serves takaomatt.com.
+          DIST=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, 'takaomatt.com')].Id | [0]" --output text)
+          if [ -z "$DIST" ] || [ "$DIST" = "None" ]; then
+            echo "No CloudFront distribution with alias takaomatt.com; skipping invalidation"
+          else
+            echo "Invalidating CloudFront distribution: $DIST"
+            aws cloudfront create-invalidation --distribution-id "$DIST" --paths "/*"
+          fi
