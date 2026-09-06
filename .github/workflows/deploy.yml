@@ -16,42 +16,25 @@ jobs:
     # Public Firebase web config. These NEXT_PUBLIC_* values are inlined into
     # the client bundle at build time and are public by design — the real
     # security boundary is the Firestore rules, not these values. They are
-    # therefore safe to keep in the repo. They are read here from repository
-    # Variables (Settings -> Secrets and variables -> Actions -> Variables) so
-    # the site can be configured without editing this file; if you prefer, you
-    # can replace each `${{ vars.NAME }}` with the literal value inline.
-    #
-    # NOTE: the actual values could not be auto-recovered when this workflow
-    # was authored (the live site was unreachable), so populate these repo
-    # Variables before the first deploy:
-    #   NEXT_PUBLIC_FIREBASE_API_KEY
-    #   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    #   NEXT_PUBLIC_FIREBASE_PROJECT_ID          (= takaomatt-4bc1e)
-    #   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    #   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    #   NEXT_PUBLIC_FIREBASE_APP_ID
-    #   NEXT_PUBLIC_NEXTBITE_FIREBASE_API_KEY
-    #   NEXT_PUBLIC_NEXTBITE_FIREBASE_AUTH_DOMAIN
-    #   NEXT_PUBLIC_NEXTBITE_FIREBASE_PROJECT_ID
-    #   NEXT_PUBLIC_NEXTBITE_FIREBASE_STORAGE_BUCKET
-    #   NEXT_PUBLIC_NEXTBITE_FIREBASE_MESSAGING_SENDER_ID
-    #   NEXT_PUBLIC_NEXTBITE_FIREBASE_APP_ID
+    # therefore safe to keep in the repo. The literal values are now inlined
+    # directly below (previously read from repository Variables), so CI builds
+    # need no additional configuration.
     env:
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      NEXT_PUBLIC_NEXTBITE_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_NEXTBITE_FIREBASE_API_KEY }}
-      NEXT_PUBLIC_NEXTBITE_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_NEXTBITE_FIREBASE_AUTH_DOMAIN }}
-      NEXT_PUBLIC_NEXTBITE_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_NEXTBITE_FIREBASE_PROJECT_ID }}
-      NEXT_PUBLIC_NEXTBITE_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_NEXTBITE_FIREBASE_STORAGE_BUCKET }}
-      NEXT_PUBLIC_NEXTBITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_NEXTBITE_FIREBASE_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_NEXTBITE_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_NEXTBITE_FIREBASE_APP_ID }}
+      NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyD8DvgWn09_roCu2dGa448LvI3KfoRSYuk"
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "takaomatt-4bc1e.firebaseapp.com"
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: "takaomatt-4bc1e"
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "takaomatt-4bc1e.firebasestorage.app"
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "873084849985"
+      NEXT_PUBLIC_FIREBASE_APP_ID: "1:873084849985:web:f7bd66b7c652e40894dbc0"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_API_KEY: "AIzaSyBrBNE3TSJ8DZqT5itpkYrbhgev6FwqeQo"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_AUTH_DOMAIN: "nextbite-d761c.firebaseapp.com"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_PROJECT_ID: "nextbite-d761c"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_STORAGE_BUCKET: "nextbite-d761c.firebasestorage.app"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_MESSAGING_SENDER_ID: "956299532839"
+      NEXT_PUBLIC_NEXTBITE_FIREBASE_APP_ID: "1:956299532839:web:558aaf3b77cf4e2f99cc02"
       # Admin allowlist — the Firebase Auth UID permitted into /admin. Public
       # (also present in firestore.rules); safe to commit.
-      NEXT_PUBLIC_ADMIN_UIDS: h6yAgTDOXxcavDyNA5dqJsvgcVR2
+      NEXT_PUBLIC_ADMIN_UIDS: "h6yAgTDOXxcavDyNA5dqJsvgcVR2"
 
     steps:
       - name: Checkout
