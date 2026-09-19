@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -16,6 +16,13 @@ import {
   getNextbiteDb,
   isAdmin,
 } from '@/lib/firebase';
+
+type MutexGrant = {
+  uid: string;
+  email?: string;
+  grantedAt: string;
+  grantedBy?: string;
+};
 
 // Flag IDs the admin portal can edit. Add new entries to expand the
 // surface — each becomes a Banner card on the page. Multiple apps live
@@ -153,6 +160,8 @@ export default function AdminClient() {
           canWrite={!!nextbiteUser}
         />
       ))}
+
+      <MutexAdmin user={user} />
     </main>
   );
 }
@@ -255,6 +264,200 @@ function BannerEditor({
           Path: <code>flags/{flagId}</code>
         </span>
       </div>
+    </section>
+  );
+}
+
+function MutexAdmin({ user }: { user: User }) {
+  const [grants, setGrants] = useState<MutexGrant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [grantEmail, setGrantEmail] = useState('');
+  const [granting, setGranting] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<string | null>(null);
+
+  const getAuthHeaders = useCallback(async () => {
+    const token = await user.getIdToken();
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  }, [user]);
+
+  const fetchGrants = useCallback(async () => {
+    setErr(null);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch('/api/admin/mutex/grants', { headers });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setGrants(data.grants ?? []);
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    fetchGrants();
+  }, [fetchGrants]);
+
+  const handleGrant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!grantEmail.trim()) return;
+
+    setGranting(true);
+    setErr(null);
+    setLastResult(null);
+
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch('/api/admin/mutex/grant', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ email: grantEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.details || `HTTP ${res.status}`);
+      }
+      const resultUid = data.uid || data.user?.uid;
+      setLastResult(
+        resultUid
+          ? `Granted Pro to ${grantEmail} (uid: ${resultUid})`
+          : `Granted Pro to ${grantEmail}`
+      );
+      setGrantEmail('');
+      fetchGrants();
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  const handleRevoke = async (grant: MutexGrant) => {
+    const identifier = grant.email || grant.uid;
+    if (!confirm(`Revoke Pro from ${identifier}?`)) return;
+
+    setRevoking(grant.uid);
+    setErr(null);
+    setLastResult(null);
+
+    try {
+      const headers = await getAuthHeaders();
+      const body = grant.email ? { email: grant.email } : { uid: grant.uid };
+      const res = await fetch('/api/admin/mutex/revoke', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.details || `HTTP ${res.status}`);
+      }
+      setLastResult(`Revoked Pro from ${identifier}`);
+      fetchGrants();
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setRevoking(null);
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2 style={{ marginTop: 0 }}>Mutex Pro Grants</h2>
+      <p style={{ fontSize: 13, marginTop: 0 }}>
+        Honorary/comped Pro subscriptions — not Stripe-managed. These bypass
+        payment and grant full Pro access.
+      </p>
+
+      {err && (
+        <p style={{ color: 'crimson', fontSize: 13 }}>
+          {err.includes('MUTEX_ADMIN_SECRET')
+            ? 'Server not configured — add MUTEX_URL and MUTEX_ADMIN_SECRET to .env.local'
+            : err}
+        </p>
+      )}
+
+      {lastResult && (
+        <p style={{ color: 'var(--accent)', fontSize: 13 }}>{lastResult}</p>
+      )}
+
+      <form onSubmit={handleGrant} style={{ marginBottom: 16 }}>
+        <label htmlFor="mutex-grant-email">Grant Pro by email</label>
+        <div className="row" style={{ marginTop: 4 }}>
+          <input
+            id="mutex-grant-email"
+            type="email"
+            placeholder="takaomatt@gmail.com"
+            value={grantEmail}
+            onChange={(e) => setGrantEmail(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button type="submit" disabled={granting || !grantEmail.trim()}>
+            {granting ? 'Granting…' : 'Grant Pro'}
+          </button>
+        </div>
+      </form>
+
+      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+        Current grants ({grants.length})
+      </div>
+
+      {loading ? (
+        <p>Loading grants…</p>
+      ) : grants.length === 0 ? (
+        <p style={{ fontSize: 13 }}>No honorary Pro grants yet.</p>
+      ) : (
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          {grants.map((g) => (
+            <li
+              key={g.uid}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 0',
+                borderBottom: '1px solid var(--border)',
+                fontSize: 13,
+              }}
+            >
+              <div>
+                <div>{g.email || '(no email)'}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  uid: {g.uid}
+                  {g.grantedAt && (
+                    <>
+                      {' · '}
+                      {new Date(g.grantedAt).toLocaleDateString()}
+                    </>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => handleRevoke(g)}
+                disabled={revoking === g.uid}
+                style={{
+                  background: 'transparent',
+                  color: 'crimson',
+                  border: '1px solid crimson',
+                  padding: '4px 10px',
+                  fontSize: 12,
+                }}
+              >
+                {revoking === g.uid ? '…' : 'Revoke'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

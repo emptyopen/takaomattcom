@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static export — emits a fully static `out/` directory you can host on
-  // S3 + CloudFront or any static host. If you later want SSR for an API
-  // route, drop the `output: 'export'` line and switch deploy to AWS
-  // Amplify or Lambda@Edge.
-  output: 'export',
+  // Hybrid mode: static pages + API routes. Deploy on Vercel, AWS Amplify,
+  // or any Node.js host. Public pages are still statically generated;
+  // only API routes require server execution.
+  //
+  // If you need a fully static `out/` build (e.g. S3 + CloudFront), add
+  // `output: 'export'` and remove the /api routes — the Mutex admin panel
+  // would then need a separate backend to keep the secret server-side.
   images: { unoptimized: true },
   reactStrictMode: true,
   // Hide the dev-only Next.js/Turbopack indicator badge (bottom corner).
