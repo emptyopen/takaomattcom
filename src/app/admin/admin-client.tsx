@@ -268,6 +268,12 @@ function BannerEditor({
   );
 }
 
+// NOTE: Mutex server must accept Firebase ID tokens from the takaomatt-4bc1e
+// project for admin authentication. The admin UID allowlist is checked on the
+// Mutex side. A parallel PR on the Mutex repo is required to add this support.
+const MUTEX_URL =
+  process.env.NEXT_PUBLIC_MUTEX_URL || 'https://themutex.app';
+
 function MutexAdmin({ user }: { user: User }) {
   const [grants, setGrants] = useState<MutexGrant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,7 +295,7 @@ function MutexAdmin({ user }: { user: User }) {
     setErr(null);
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch('/api/admin/mutex/grants', { headers });
+      const res = await fetch(`${MUTEX_URL}/api/admin/pro/grants`, { headers });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `HTTP ${res.status}`);
@@ -317,7 +323,7 @@ function MutexAdmin({ user }: { user: User }) {
 
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch('/api/admin/mutex/grant', {
+      const res = await fetch(`${MUTEX_URL}/api/admin/pro/grant`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ email: grantEmail.trim() }),
@@ -352,7 +358,7 @@ function MutexAdmin({ user }: { user: User }) {
     try {
       const headers = await getAuthHeaders();
       const body = grant.email ? { email: grant.email } : { uid: grant.uid };
-      const res = await fetch('/api/admin/mutex/revoke', {
+      const res = await fetch(`${MUTEX_URL}/api/admin/pro/revoke`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
@@ -379,11 +385,7 @@ function MutexAdmin({ user }: { user: User }) {
       </p>
 
       {err && (
-        <p style={{ color: 'crimson', fontSize: 13 }}>
-          {err.includes('MUTEX_ADMIN_SECRET')
-            ? 'Server not configured — add MUTEX_URL and MUTEX_ADMIN_SECRET to .env.local'
-            : err}
-        </p>
+        <p style={{ color: 'crimson', fontSize: 13 }}>{err}</p>
       )}
 
       {lastResult && (
