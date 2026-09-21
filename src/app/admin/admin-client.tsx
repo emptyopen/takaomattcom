@@ -42,18 +42,22 @@ const emptyFlag: BannerFlag = {
 // Sign in to the site's project (for the admin gate) and reuse the same Google
 // credential to also sign in to NextBite's project, so banner writes land in
 // NextBite's Firestore authenticated as the same person.
-async function signInBothProjects() {
+//
+// Credential reuse only works if this project's web OAuth client ID is listed
+// under "Whitelist client IDs from external projects" in NextBite's Google
+// sign-in provider. Without it Firebase rejects the token and every session
+// falls back to the manual "Connect NextBite" popup.
+async function signInBothProjects(): Promise<string | null> {
   const result = await signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
   const cred = GoogleAuthProvider.credentialFromResult(result);
-  if (cred) {
-    try {
-      await signInWithCredential(getNextbiteAuth(), cred);
-    } catch (e) {
-      // Credential reuse can fail if the site's OAuth client isn't whitelisted
-      // in NextBite's Google provider. Don't block the admin UI — the
-      // "Connect NextBite" button offers a direct-popup fallback.
-      console.error('NextBite credential sign-in failed:', e);
-    }
+  if (!cred) return 'Google sign-in returned no reusable credential.';
+  try {
+    await signInWithCredential(getNextbiteAuth(), cred);
+    return null;
+  } catch (e) {
+    // Don't block the admin UI — the "Connect NextBite" button is the fallback.
+    console.error('NextBite credential sign-in failed:', e);
+    return e instanceof Error ? e.message : String(e);
   }
 }
 
@@ -61,6 +65,7 @@ export default function AdminClient() {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [nextbiteUser, setNextbiteUser] = useState<User | null>(null);
+  const [nextbiteError, setNextbiteError] = useState<string | null>(null);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -71,8 +76,23 @@ export default function AdminClient() {
   }, []);
 
   useEffect(() => {
-    return onAuthStateChanged(getNextbiteAuth(), setNextbiteUser);
+    return onAuthStateChanged(getNextbiteAuth(), (u) => {
+      setNextbiteUser(u);
+      if (u) setNextbiteError(null);
+    });
   }, []);
+
+  // Direct-popup fallback for when the shared-credential sign-in didn't
+  // establish a NextBite session.
+  const connectNextbite = async () => {
+    setNextbiteError(null);
+    try {
+      await signInWithPopup(getNextbiteAuth(), new GoogleAuthProvider());
+    } catch (e) {
+      console.error(e);
+      setNextbiteError(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   if (!authChecked) {
     return (
@@ -89,7 +109,7 @@ export default function AdminClient() {
         <button
           onClick={async () => {
             try {
-              await signInBothProjects();
+              setNextbiteError(await signInBothProjects());
             } catch (e) {
               console.error(e);
               alert('Sign-in failed. Check console.');
@@ -148,6 +168,15 @@ export default function AdminClient() {
             Not connected to NextBite — saving is disabled. Connect to authorize
             writes into NextBite&apos;s project.
           </p>
+          {nextbiteError && (
+            <p style={{ fontSize: 12, color: 'crimson' }}>
+              Automatic connect failed: <code>{nextbiteError}</code>
+              <br />
+              If this says the credential is invalid, add this site&apos;s web
+              OAuth client ID to &quot;Whitelist client IDs from external
+              projects&quot; in NextBite&apos;s Google sign-in provider.
+            </p>
+          )}
           <button onClick={connectNextbite}>Connect NextBite</button>
         </section>
       )}
@@ -167,16 +196,6 @@ export default function AdminClient() {
   );
 }
 
-// Direct-popup fallback to authenticate against NextBite's project when the
-// shared-credential sign-in didn't establish a NextBite session.
-async function connectNextbite() {
-  try {
-    await signInWithPopup(getNextbiteAuth(), new GoogleAuthProvider());
-  } catch (e) {
-    console.error(e);
-    alert('Could not connect to NextBite. Check console.');
-  }
-}
 
 function BannerEditor({
   flagId,
