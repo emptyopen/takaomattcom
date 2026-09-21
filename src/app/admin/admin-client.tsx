@@ -161,6 +161,7 @@ export default function AdminClient() {
         />
       ))}
 
+      <MutexEmergency user={user} />
       <MutexAdmin user={user} />
     </main>
   );
@@ -273,6 +274,199 @@ function BannerEditor({
 // Mutex side. A parallel PR on the Mutex repo is required to add this support.
 const MUTEX_URL =
   process.env.NEXT_PUBLIC_MUTEX_URL || 'https://themutex.app';
+
+type MutexStatus = {
+  locked: boolean;
+  live_rooms: number;
+  store: string;
+  durable: boolean;
+};
+
+// Two blunt instruments for when Mutex needs to stop right now. Kept in their
+// own card, above the Pro grants, so neither is ever a mis-click away.
+function MutexEmergency({ user }: { user: User }) {
+  const [status, setStatus] = useState<MutexStatus | null>(null);
+  const [busy, setBusy] = useState<null | 'purge' | 'lock'>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  const getAuthHeaders = useCallback(async () => {
+    const token = await user.getIdToken();
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  }, [user]);
+
+  const fetchStatus = useCallback(async () => {
+    setErr(null);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${MUTEX_URL}/api/admin/rooms/lockdown`, { headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+      setStatus(data);
+    } catch (e) {
+      setErr(String(e));
+    }
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  const handlePurge = async () => {
+    const count = status?.live_rooms ?? 0;
+    if (
+      !confirm(
+        `Destroy all ${count} live room${count === 1 ? '' : 's'} on Mutex?\n\n` +
+          'Every transcript is deleted immediately and connected agents are ' +
+          'disconnected. This cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    setBusy('purge');
+    setErr(null);
+    setResult(null);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${MUTEX_URL}/api/admin/rooms/purge`, {
+        method: 'POST',
+        headers,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+      setResult(`Destroyed ${data.purged} room${data.purged === 1 ? '' : 's'}.`);
+      fetchStatus();
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleToggleLock = async () => {
+    const next = !status?.locked;
+    if (
+      next &&
+      !confirm('Block all new room creation on Mutex?\n\nExisting rooms keep running.')
+    ) {
+      return;
+    }
+
+    setBusy('lock');
+    setErr(null);
+    setResult(null);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${MUTEX_URL}/api/admin/rooms/lockdown`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ locked: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+      setResult(next ? 'Room creation is blocked.' : 'Room creation is open again.');
+      fetchStatus();
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const locked = status?.locked ?? false;
+
+  return (
+    <section className="card" style={{ borderColor: 'crimson' }}>
+      <h2 style={{ marginTop: 0 }}>Mutex — emergency controls</h2>
+      <p style={{ fontSize: 13, marginTop: 0 }}>
+        Immediate, destructive, and not undoable. For shutting the service down
+        in a hurry.
+      </p>
+
+      {err && <p style={{ color: 'crimson', fontSize: 13 }}>{err}</p>}
+      {result && (
+        <p style={{ color: 'var(--accent)', fontSize: 13 }}>{result}</p>
+      )}
+
+      <div style={{ fontSize: 13, marginBottom: 12 }}>
+        {status ? (
+          <>
+            <div>
+              Live rooms: <strong>{status.live_rooms}</strong>
+            </div>
+            <div>
+              New rooms:{' '}
+              <strong style={{ color: locked ? 'crimson' : 'inherit' }}>
+                {locked ? 'BLOCKED' : 'allowed'}
+              </strong>
+            </div>
+          </>
+        ) : (
+          <div>Loading status…</div>
+        )}
+      </div>
+
+      {status && !status.durable && (
+        <p
+          style={{
+            fontSize: 12,
+            color: 'crimson',
+            border: '1px solid crimson',
+            padding: '8px 10px',
+            marginBottom: 12,
+          }}
+        >
+          Mutex is running the in-memory store, so this switch is not durable:
+          a restart, a deploy, or the machine idling to zero clears it and new
+          rooms are allowed again. Treat it as a stopgap and follow up by
+          scaling the app down, until REDIS_URL is set.
+        </p>
+      )}
+
+      <div className="row" style={{ gap: 8 }}>
+        <button
+          onClick={handlePurge}
+          disabled={busy !== null}
+          style={{
+            background: 'crimson',
+            color: 'white',
+            border: '1px solid crimson',
+          }}
+        >
+          {busy === 'purge' ? 'Destroying…' : 'Destroy all rooms'}
+        </button>
+
+        <button
+          onClick={handleToggleLock}
+          disabled={busy !== null || status === null}
+          style={{
+            background: 'transparent',
+            color: 'crimson',
+            border: '1px solid crimson',
+          }}
+        >
+          {busy === 'lock'
+            ? 'Working…'
+            : locked
+              ? 'Allow new rooms'
+              : 'Block new rooms'}
+        </button>
+
+        <button
+          onClick={fetchStatus}
+          disabled={busy !== null}
+          style={{ background: 'transparent' }}
+        >
+          Refresh
+        </button>
+      </div>
+    </section>
+  );
+}
 
 function MutexAdmin({ user }: { user: User }) {
   const [grants, setGrants] = useState<MutexGrant[]>([]);
