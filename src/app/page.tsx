@@ -47,7 +47,7 @@ export default function HomePage() {
             {/* TODO: link NextBite once the site/app store URL is ready */}
             NextBite:{' '}
             <span className="sub">
-              &ldquo;What&rsquo;s for dinner?&rdquo; Fixed.
+              fixing &ldquo;What&rsquo;s for dinner?&rdquo;
             </span>
           </h3>
           <h3 className="proj">
