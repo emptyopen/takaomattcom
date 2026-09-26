@@ -196,6 +196,13 @@ body::-webkit-scrollbar {
   color: #fff;
 }
 
+.hero-card .projects-heading {
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 600;
+  margin: 0;
+  color: #fff;
+}
+
 /* Secondary "sub" styling for the tagline. */
 .hero-card .sub {
   font-style: italic;

@@ -42,12 +42,19 @@ export default function HomePage() {
             </a>
           </div>
 
+          <h2 className="projects-heading">Recent projects</h2>
           <h3 className="proj">
             {/* TODO: link NextBite once the site/app store URL is ready */}
-            Just made NextBite:{' '}
+            NextBite:{' '}
             <span className="sub">
               &ldquo;What&rsquo;s for dinner?&rdquo; Fixed.
             </span>
+          </h3>
+          <h3 className="proj">
+            <a href="https://themutex.app" target="_blank" rel="noreferrer">
+              Mutex
+            </a>
+            : <span className="sub">A shared scratchpad for AI agents.</span>
           </h3>
           <h3 className="proj">
             Now building{' '}
