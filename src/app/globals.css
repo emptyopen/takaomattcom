@@ -426,3 +426,33 @@ body::-webkit-scrollbar {
   cursor: pointer;
   backdrop-filter: blur(8px);
 }
+
+/* Portfolio app administration */
+.admin-container { max-width: 1040px; }
+.admin-app-tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin: 24px 0; }
+.admin-app-tabs button { border-radius: 0; padding: 12px 4px; background: transparent; color: var(--muted); border-bottom: 3px solid transparent; font-weight: 600; }
+.admin-app-tabs button[aria-selected='true'] { color: var(--accent); border-bottom-color: var(--accent); }
+.admin-section-heading { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.admin-section-heading h2 { margin: 0; }
+.admin-section-heading p { margin: 6px 0 0; }
+.admin-metric-toolbar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center; margin: 24px 0 16px; font-size: 12px; color: var(--muted); }
+.admin-period { display: flex; gap: 4px; }
+.admin-period button { padding: 6px 10px; background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.admin-period button[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); }
+.admin-metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; }
+.admin-metric { padding: 16px; border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+.admin-metric > span { font-size: 13px; color: var(--muted); }
+.admin-metric strong { font-size: 32px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.admin-metric small { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.admin-message-chart { width: 100%; height: auto; margin-top: 12px; }
+.admin-chart-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+.admin-fine-print { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.admin-fine-print table { width: 100%; text-align: left; }
+.admin-communication { margin-top: 20px; }
+.admin-status { font-size: 12px; color: var(--accent); border: 1px solid currentColor; border-radius: 30px; padding: 5px 10px; }
+.admin-status.is-paused, .admin-error { color: #dc3545; }
+.admin-danger-button, .admin-pause-banner { background: #b91c1c; color: white; }
+.admin-pause-banner { padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+.admin-portfolio { margin-top: 32px; }
+.admin-container summary { cursor: pointer; padding: 12px 0; }
+.admin-container button:focus-visible, .admin-container summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
