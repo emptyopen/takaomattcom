@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import MutexDashboard from '@/components/mutex-dashboard';
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -58,6 +59,7 @@ async function signInBothProjects() {
 }
 
 export default function AdminClient() {
+  const [activeApp, setActiveApp] = useState<'mutex' | 'nextbite'>('mutex');
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [nextbiteUser, setNextbiteUser] = useState<User | null>(null);
@@ -119,7 +121,7 @@ export default function AdminClient() {
   }
 
   return (
-    <main className="container">
+    <main className="container admin-container">
       <div
         style={{
           display: 'flex',
@@ -138,10 +140,27 @@ export default function AdminClient() {
         </button>
       </div>
       <p>
-        Signed in as <strong>{user.email}</strong>. Edits write directly to
-        NextBite&apos;s Firestore — the app picks them up in real time.
+        Signed in as <strong>{user.email}</strong>.
       </p>
 
+      <div className="admin-app-tabs" role="tablist" aria-label="Apps">
+        {(['mutex', 'nextbite'] as const).map(app => <button key={app} id={app + '-tab'} role="tab"
+          aria-selected={activeApp === app} aria-controls={app + '-panel'}
+          tabIndex={activeApp === app ? 0 : -1}
+          onKeyDown={event => {
+            if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+              event.preventDefault();
+              const next = event.key === 'Home' ? 'mutex' : event.key === 'End' ? 'nextbite' : activeApp === 'mutex' ? 'nextbite' : 'mutex';
+              setActiveApp(next); document.getElementById(next + '-tab')?.focus();
+            }
+          }} onClick={() => setActiveApp(app)}>{app === 'mutex' ? 'Mutex' : 'NextBite'}</button>)}
+      </div>
+      {activeApp === 'mutex' && <div id="mutex-panel" role="tabpanel" aria-labelledby="mutex-tab">
+        <MutexDashboard user={user} />
+        <MutexAdmin user={user} />
+        <details><summary>Legacy room administration</summary><MutexEmergency user={user} /></details>
+      </div>}
+      {activeApp === 'nextbite' && <div id="nextbite-panel" role="tabpanel" aria-labelledby="nextbite-tab">
       {!nextbiteUser && (
         <section className="card" style={{ borderColor: 'crimson' }}>
           <p style={{ marginTop: 0 }}>
@@ -161,8 +180,7 @@ export default function AdminClient() {
         />
       ))}
 
-      <MutexEmergency user={user} />
-      <MutexAdmin user={user} />
+      </div>}
     </main>
   );
 }
