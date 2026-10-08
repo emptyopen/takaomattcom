@@ -10,3 +10,10 @@ next-env.d.ts
 
 # Local AWS deploy artifacts (account ID, distribution/cert IDs) — keep out of public repo
 .deploy/
+
+# Isolated Mutex server checkout for coordinated admin work
+.mutex-admin-worktree/
+.site-release/
+
+# Private portfolio operations record (business plans, spend) — never commit to this public repo
+PORTFOLIO.md

@@ -30,6 +30,11 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Private business summaries. The client-side admin gate is not security.
+    match /portfolio/overview {
+      allow read, write: if request.auth != null
+        && request.auth.uid == 'h6yAgTDOXxcavDyNA5dqJsvgcVR2';
+    }
     // Default deny for everything else.
     match /{document=**} {
       allow read, write: if false;

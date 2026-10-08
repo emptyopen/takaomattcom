@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import PortfolioOverview from '@/components/portfolio-overview';
 import MutexDashboard from '@/components/mutex-dashboard';
 import {
   GoogleAuthProvider,
@@ -210,6 +211,7 @@ export default function AdminClient() {
       ))}
 
       </div>}
+      <details className="admin-portfolio"><summary>Private portfolio overview</summary><PortfolioOverview /></details>
     </main>
   );
 }
