@@ -15,7 +15,7 @@
     "@grpc/grpc-js": "^1.13.6"
   },
   "dependencies": {
-    "next": "^16.3.8",
+    "next": "^16.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "firebase": "^10.13.0"
