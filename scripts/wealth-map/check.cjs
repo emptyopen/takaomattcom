@@ -25,3 +25,44 @@ const world=JSON.parse(fs.readFileSync('public/wealth-data/world.json'));
 assert(world.features.filter(f=>f.properties.value>0).length>150);
 assert.equal(world.features.find(f=>f.properties.id==='USA').properties.value,meta.usGDP);
 console.log(`Passed scale, missing-data, national anchor, and snapshot checks (${sf.features.length} starter block groups).`);
+const spatialSource=ts.transpileModule(fs.readFileSync('src/app/wealth-map/spatial.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+const spatial={exports:{}};vm.runInNewContext(spatialSource,spatial);
+const {cellsFor,geometryBox,areaName,detailLevel,intersects}=spatial.exports;
+const names=JSON.parse(fs.readFileSync('public/wealth-data/county-names.json'));
+assert.equal(areaName('060750158021','Block Group 1',names),'San Francisco County, California · Tract 158.02 · Block group 1');
+assert.notEqual(areaName('060750158021','Block Group 1',names),areaName('060750159001','Block Group 1',names));
+assert.equal(detailLevel(11),8);assert.equal(detailLevel(12),10);
+const a=cellsFor([-122.49,37.76,-122.43,37.79],10),b=cellsFor([-122.48,37.765,-122.42,37.795],10);
+assert.deepEqual(a.map(c=>c.key),b.map(c=>c.key),'Small pans reuse identical cells');
+assert(intersects([-1,-1,1,1],[0,0,2,2]));assert(!intersects([-1,-1,1,1],[2,2,3,3]));
+assert.equal(JSON.stringify(geometryBox({type:'Polygon',coordinates:[[[0,0],[3,0],[3,2],[0,0]]]})),JSON.stringify([0,0,3,2]));
+const manifest=JSON.parse(fs.readFileSync('public/wealth-data/tiles-v3/manifest.json'));
+for(const key of manifest){const data=JSON.parse(fs.readFileSync(`public/wealth-data/tiles-v3/${key}.json`));assert.equal(new Set(data.features.map(f=>f.properties.GEOID)).size,data.features.length);}
+const county=JSON.parse(fs.readFileSync('public/wealth-data/counties.json'));
+assert(county.features.length>3200);assert(county.features.every(f=>names[f.properties.GEOID]));
+console.log(`Passed stable tile keys, meaningful labels, overview coverage, zoom thresholds, and ${manifest.length} static tile checks.`);
+
+async function checkPersistentCache(){
+ const stored=new Map();let requests=0;
+ const disk={match:async key=>stored.get(key)?.clone(),put:async(key,response)=>stored.set(key,response),keys:async()=>[...stored.keys()],delete:async key=>stored.delete(key)};
+ const dataContext={exports:{},AbortSignal,URLSearchParams,Response,caches:{open:async()=>disk},fetch:async url=>{
+  requests++;
+  const offset=new URL(url,'https://example.test').searchParams.get('resultOffset');
+  return new Response(JSON.stringify({type:'FeatureCollection',features:[{type:'Feature',properties:{id:offset},geometry:null}],exceededTransferLimit:offset==='0'}));
+ }};
+ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/app/wealth-map/data.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,dataContext);
+ const cell={key:'10-test',layer:10,box:[-123,37,-122,38]},sources=[];
+ const first=await dataContext.exports.loadCell(cell,new Set(),new AbortController().signal,s=>sources.push(s));
+ assert.equal(first.features.length,2);assert.equal(requests,2);
+ const cached=await dataContext.exports.loadCell(cell,new Set(),new AbortController().signal,s=>sources.push(s));
+ assert.equal(cached.features.length,2);assert.equal(requests,2,'Repeat visit must not fetch boundaries');assert.equal(sources.at(-1),'disk');
+ await dataContext.exports.loadCell({...cell,key:'8-static'},new Set(['8-static']),new AbortController().signal,s=>sources.push(s));
+ assert.equal(sources.at(-1),'static');assert.equal(requests,3);
+ dataContext.caches.open=async()=>{throw new Error('Storage disabled');};
+ await dataContext.exports.loadCell({...cell,key:'8-no-storage'},new Set(['8-no-storage']),new AbortController().signal);
+ assert.equal(requests,4,'Storage failure must fall back to public data');
+ dataContext.fetch=async()=>new Response(JSON.stringify({error:{message:'Unavailable'}}));
+ await assert.rejects(dataContext.exports.loadCell({...cell,key:'8-failure'},new Set(['8-failure']),new AbortController().signal),/Unavailable/);
+ console.log('Passed boundary pagination, persistent cache reuse, and static tile routing.');
+}
+checkPersistentCache().catch(error=>{console.error(error);process.exitCode=1;});
