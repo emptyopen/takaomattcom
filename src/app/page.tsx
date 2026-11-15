@@ -43,6 +43,7 @@ export default function HomePage() {
           </div>
 
           <h2 className="projects-heading">Recent projects</h2>
+          <h3 className="proj"><a href="/wealth-map">Wealth Atlas</a>: <span className="sub">The geography of prosperity, from countries to city blocks.</span></h3>
           <h3 className="proj">
             {/* TODO: link NextBite once the site/app store URL is ready */}
             NextBite:{' '}
