@@ -1,7 +1,8 @@
 """Prepare static overview layers and tile the existing SF starter geometry."""
 import json, pathlib, urllib.request, urllib.parse, math
 ROOT = pathlib.Path(__file__).resolve().parents[2] / 'public/wealth-data'
-TIGER = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2024/MapServer'
+TIGER = 'https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024'
+LAYERS = {80:'State_County/MapServer/7',82:'State_County/MapServer/11',8:'Tracts_Blocks/MapServer/4',10:'Tracts_Blocks/MapServer/6'}
 
 def query(layer, extra=None):
     features = []
@@ -10,7 +11,7 @@ def query(layer, extra=None):
                  returnGeometry='true', geometryPrecision=4, maxAllowableOffset=.003,
                  resultRecordCount=2000, resultOffset=offset, orderByFields='GEOID')
         p.update(extra or {})
-        with urllib.request.urlopen(TIGER+f'/{layer}/query?'+urllib.parse.urlencode(p),timeout=120) as r:
+        with urllib.request.urlopen(TIGER+'/'+LAYERS[layer]+'/query?'+urllib.parse.urlencode(p),timeout=120) as r:
             d = json.load(r)
         if 'features' not in d: raise RuntimeError(d)
         features.extend(d['features'])
@@ -35,7 +36,7 @@ save('county-names.json',names)
 
 # Reuse small fixed cells regardless of viewport pixels or zoom within a level.
 # Only publish cells wholly contained in the original snapshot coverage.
-tiles=ROOT/'tiles-v3'; tiles.mkdir(exist_ok=True)
+tiles=ROOT/'tiles-v4'; tiles.mkdir(exist_ok=True)
 manifest=[]
 def bounds(coords):
     if isinstance(coords[0],(int,float)): return [coords[0],coords[1],coords[0],coords[1]]
@@ -49,11 +50,11 @@ def tile_data(data,layer,size,coverage):
             left=x*size-180;bottom=y*size-90
             found=[f for f,b in features if b[0]<=left+size and b[2]>=left and b[1]<=bottom+size and b[3]>=bottom]
             key=f'{layer}-{x}-{y}'
-            save('tiles-v3/'+key+'.json',{'type':'FeatureCollection','features':found})
+            save('tiles-v4/'+key+'.json',{'type':'FeatureCollection','features':found})
             manifest.append(key)
 blocks=query(10,dict(geometry='-123,37.375,-121.875,38.25',geometryType='esriGeometryEnvelope',inSR=4326,spatialRel='esriSpatialRelIntersects',maxAllowableOffset=.00004,geometryPrecision=5))
 tile_data(blocks,10,.125,[-123,37.375,-121.875,38.25])
 tracts=query(8,dict(geometry='-124,36,-121,40',geometryType='esriGeometryEnvelope',inSR=4326,spatialRel='esriSpatialRelIntersects',maxAllowableOffset=.0004))
 tile_data(tracts,8,1,[-124,36,-121,40])
-save('tiles-v3/manifest.json',manifest)
+save('tiles-v4/manifest.json',manifest)
 print(f'Prepared {len(states["features"])} states, {len(counties["features"])} counties, {len(manifest)} static detail cells')

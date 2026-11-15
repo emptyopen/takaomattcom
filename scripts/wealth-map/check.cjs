@@ -36,13 +36,34 @@ const a=cellsFor([-122.49,37.76,-122.43,37.79],10),b=cellsFor([-122.48,37.765,-1
 assert.deepEqual(a.map(c=>c.key),b.map(c=>c.key),'Small pans reuse identical cells');
 assert(intersects([-1,-1,1,1],[0,0,2,2]));assert(!intersects([-1,-1,1,1],[2,2,3,3]));
 assert.equal(JSON.stringify(geometryBox({type:'Polygon',coordinates:[[[0,0],[3,0],[3,2],[0,0]]]})),JSON.stringify([0,0,3,2]));
-const manifest=JSON.parse(fs.readFileSync('public/wealth-data/tiles-v3/manifest.json'));
-for(const key of manifest){const data=JSON.parse(fs.readFileSync(`public/wealth-data/tiles-v3/${key}.json`));assert.equal(new Set(data.features.map(f=>f.properties.GEOID)).size,data.features.length);}
+const manifest=JSON.parse(fs.readFileSync('public/wealth-data/tiles-v4/manifest.json'));
+for(const key of manifest){const data=JSON.parse(fs.readFileSync(`public/wealth-data/tiles-v4/${key}.json`));assert.equal(new Set(data.features.map(f=>f.properties.GEOID)).size,data.features.length);}
 const county=JSON.parse(fs.readFileSync('public/wealth-data/counties.json'));
 assert(county.features.length>3200);assert(county.features.every(f=>names[f.properties.GEOID]));
 console.log(`Passed stable tile keys, meaningful labels, overview coverage, zoom thresholds, and ${manifest.length} static tile checks.`);
 
+let lookupRequests=0;
+const contextGeometry={type:'Polygon',coordinates:[[[-119,33],[-118,33],[-118,35],[-119,35],[-119,33]]]};
+const contextModule={exports:{},URLSearchParams,require:name=>name==='./spatial'?spatial.exports:{readJSON:async url=>{
+ lookupRequests++;const zip=url.includes('/2/query');
+ return {type:'FeatureCollection',features:url.includes('/30/query')?[]:[{type:'Feature',geometry:contextGeometry,properties:zip?{ZCTA5:'90405'}:{NAME:'Santa Monica city'}}]};
+}}};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/app/wealth-map/place-context.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,contextModule);
+const {containsPoint,createPlaceLookup}=contextModule.exports;
+assert(containsPoint(contextGeometry,[-118.5,34]));
+assert(!containsPoint({...contextGeometry,coordinates:[...contextGeometry.coordinates,[[-118.6,33.5],[-118.4,33.5],[-118.4,34.5],[-118.6,34.5],[-118.6,33.5]]]},[-118.5,34]),'Polygon holes must remain water');
+const california=JSON.parse(fs.readFileSync('public/wealth-data/states.json')).features.find(f=>f.properties.GEOID==='06');
+assert(!containsPoint(california.geometry,[-118.55,33.99]),'Santa Monica offshore point must not be painted as California');
+assert(containsPoint(california.geometry,[-118.416,33.388]),'Catalina Island must remain land');
+assert(containsPoint(california.geometry,[-122.44,37.765]),'San Francisco must remain land');
+
 async function checkPersistentCache(){
+ const lookup=createPlaceLookup();
+ const location=await lookup(-118.5,34,new AbortController().signal);
+ assert.equal(location.city,'Santa Monica');assert.equal(location.zip,'90405');assert.equal(lookupRequests,3);
+ const nearby=await lookup(-118.51,34.01,new AbortController().signal);
+ assert.equal(nearby.zip,'90405');assert.equal(lookupRequests,3,'Nearby hover must reuse containing ZIP/place geometry');
+ console.log('Passed readable city/ZIP lookup, local lookup reuse, coastline, island and polygon-hole checks.');
  const stored=new Map();let requests=0;
  const disk={match:async key=>stored.get(key)?.clone(),put:async(key,response)=>stored.set(key,response),keys:async()=>[...stored.keys()],delete:async key=>stored.delete(key)};
  const dataContext={exports:{},AbortSignal,URLSearchParams,Response,caches:{open:async()=>disk},fetch:async url=>{
