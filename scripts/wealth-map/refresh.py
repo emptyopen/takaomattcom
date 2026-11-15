@@ -49,6 +49,6 @@ params = dict(f='geojson', where='1=1', geometry='-122.65,37.5,-122.15,38.0', ge
 sf = json.loads(read(TIGER + '/10/query?' + urllib.parse.urlencode(params)))
 assert sf.get('features') and not sf.get('exceededTransferLimit'), 'Incomplete starter geometry'
 save('san-francisco.json', sf)
-meta = {'year': 2024, 'acsPeriod': '2020–2024', 'usIncome': national, 'usGDP': values['USA'], 'worldGDP': values['WLD'], 'retrieved': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'sources': {'acs': ACS, 'worldBank': wb_url, 'boundaries': TIGER, 'naturalEarth': world_url}, 'stateFiles': len(states), 'usAreas': sum(map(len, states.values()))}
+meta = {'year': 2024, 'acsPeriod': '2020–2024', 'usIncome': national, 'usGDP': values['USA'], 'worldGDP': values['WLD'], 'retrieved': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'sources': {'acs': ACS, 'worldBank': wb_url, 'boundaries': TIGER, 'naturalEarth': world_url, 'cartographicBoundaries': 'https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024', 'placeAndZipContext': TIGER}, 'stateFiles': len(states), 'usAreas': sum(map(len, states.values()))}
 save('meta.json', meta)
 print(json.dumps(meta, indent=2))
